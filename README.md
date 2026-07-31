@@ -238,20 +238,16 @@ http://localhost:5000
 ## 📸 Screenshots
 
 ### Dashboard
+![BugTrack AI Dashboard](screenshots/Dashboard.png)
 
-Add dashboard screenshot here.
+### Projects
+![BugTrack AI Projects](screenshots/Project.png)
 
-### Issues Page
+### Create Issue
+![BugTrack AI Create Issue](screenshots/CreateIssues.png)
 
-Add issues page screenshot here.
-
-### Activity History
-
-Add activity history screenshot here.
-
-### Attachment Preview
-
-Add attachment preview screenshot here.
+### Issues
+![BugTrack AI Issues](screenshots/Issues.png)
 
 > Screenshots will be added as the project development progresses.
 
