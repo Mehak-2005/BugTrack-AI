@@ -1,0 +1,656 @@
+/* =========================================
+   ACTIVITY HISTORY PAGE
+========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+  IMPORTANT:
+  Sidebar and topbar are handled by Layout.jsx.
+  ActivityPage only styles the content inside
+  the existing application layout.
+*/
+
+.activity-page {
+  width: 100%;
+  min-height: calc(100vh - 88px);
+
+  background: #fbf4f1;
+  color: #35262b;
+
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* =========================================
+   MAIN CONTENT
+========================================= */
+
+.activity-content {
+  width: 100%;
+  max-width: 1100px;
+
+  margin: 0 auto;
+
+  padding: 70px 40px 80px;
+}
+
+
+/* =========================================
+   PAGE HEADING
+========================================= */
+
+.activity-heading {
+  width: 100%;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 30px;
+
+  margin-bottom: 35px;
+}
+
+.activity-title-area {
+  flex: 1;
+}
+
+.activity-eyebrow {
+  margin: 0 0 10px !important;
+
+  color: #963d5d !important;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.activity-heading h1 {
+  margin: 0 0 10px;
+
+  color: #35262b;
+
+  font-size: 38px;
+  font-weight: 700;
+
+  line-height: 1.15;
+}
+
+.activity-subtitle {
+  margin: 0 !important;
+
+  color: #78696d !important;
+
+  font-size: 16px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   ACTIVITY COUNT CARD
+========================================= */
+
+.activity-count {
+  min-width: 190px;
+
+  padding: 18px 22px;
+
+  background: #ffffff;
+
+  border: 1px solid #eadbd6;
+  border-radius: 14px;
+
+  box-shadow:
+    0 5px 18px rgba(75, 45, 53, 0.05);
+
+  flex-shrink: 0;
+}
+
+.activity-count span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #806d72;
+
+  font-size: 13px;
+}
+
+.activity-count strong {
+  display: block;
+
+  color: #87344f;
+
+  font-size: 28px;
+  font-weight: 700;
+}
+
+
+/* =========================================
+   SEARCH + FILTER
+========================================= */
+
+.activity-controls {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr) 220px;
+
+  gap: 12px;
+
+  margin-bottom: 30px;
+
+  padding: 16px;
+
+  background: #ffffff;
+
+  border: 1px solid #eadbd6;
+  border-radius: 14px;
+
+  box-shadow:
+    0 5px 18px rgba(75, 45, 53, 0.04);
+}
+
+.activity-controls input,
+.activity-controls select {
+  width: 100%;
+  min-width: 0;
+
+  min-height: 50px;
+
+  padding: 0 15px;
+
+  background: #ffffff;
+
+  color: #443338;
+
+  border: 1px solid #dfcfca;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 15px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.activity-controls input::placeholder {
+  color: #99898d;
+}
+
+.activity-controls input:focus,
+.activity-controls select:focus {
+  border-color: #a9506d;
+
+  box-shadow:
+    0 0 0 3px rgba(169, 80, 109, 0.08);
+}
+
+
+/* =========================================
+   ACTIVITY TIMELINE CONTAINER
+========================================= */
+
+.activity-timeline {
+  width: 100%;
+
+  padding: 12px 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #eadbd6;
+  border-radius: 18px;
+
+  box-shadow:
+    0 8px 25px rgba(75, 45, 53, 0.06);
+}
+
+
+/* =========================================
+   ACTIVITY CARD
+========================================= */
+
+.activity-card {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: 55px minmax(0, 1fr);
+}
+
+
+/* =========================================
+   TIMELINE COLUMN
+========================================= */
+
+.timeline-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timeline-dot {
+  width: 34px;
+  height: 34px;
+
+  margin-top: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #923b59;
+
+  color: #ffffff;
+
+  border-radius: 50%;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  position: relative;
+  z-index: 2;
+}
+
+.timeline-line {
+  width: 2px;
+
+  flex: 1;
+
+  min-height: 75px;
+
+  background: #ead8dd;
+}
+
+
+/* =========================================
+   ACTIVITY CARD CONTENT
+========================================= */
+
+.activity-card-content {
+  min-width: 0;
+
+  padding:
+    25px 5px
+    28px 15px;
+
+  border-bottom:
+    1px solid #eee2de;
+}
+
+.activity-card:last-child
+.activity-card-content {
+  border-bottom: none;
+}
+
+
+/* =========================================
+   ACTIVITY CARD HEADER
+========================================= */
+
+.activity-card-header {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.activity-card-title {
+  min-width: 0;
+}
+
+.activity-action {
+  display: inline-block;
+
+  margin-bottom: 9px;
+
+  padding: 6px 10px;
+
+  background: #f3e2e7;
+
+  color: #85364f;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.activity-card h3 {
+  margin: 0;
+
+  color: #422d34;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  line-height: 1.35;
+
+  overflow-wrap: anywhere;
+}
+
+.activity-date {
+  flex-shrink: 0;
+
+  color: #99898d;
+
+  font-size: 13px;
+
+  white-space: nowrap;
+}
+
+
+/* =========================================
+   ACTIVITY DETAILS
+========================================= */
+
+.activity-details {
+  margin:
+    13px 0
+    16px;
+
+  color: #6e5e63;
+
+  font-size: 15px;
+
+  line-height: 1.6;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* =========================================
+   ACTIVITY META
+========================================= */
+
+.activity-meta {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+}
+
+.activity-user {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  min-width: 0;
+
+  color: #746368;
+
+  font-size: 13px;
+}
+
+.small-avatar {
+  width: 29px;
+  height: 29px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  background: #f0dce2;
+
+  color: #84364f;
+
+  border-radius: 50%;
+
+  font-weight: 700;
+}
+
+.activity-user span {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.activity-status {
+  flex-shrink: 0;
+
+  padding: 6px 11px;
+
+  background: #f7eeeb;
+
+  color: #72585f;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
+/* =========================================
+   LOADING / EMPTY / ERROR
+========================================= */
+
+.activity-message,
+.activity-empty,
+.activity-error {
+  width: 100%;
+
+  padding: 55px 25px;
+
+  background: #ffffff;
+
+  border: 1px solid #eadbd6;
+  border-radius: 16px;
+
+  text-align: center;
+
+  color: #78696d;
+
+  box-shadow:
+    0 5px 18px rgba(75, 45, 53, 0.04);
+}
+
+.activity-empty h3,
+.activity-error h3 {
+  margin: 12px 0 8px;
+
+  color: #553740;
+
+  font-size: 19px;
+}
+
+.activity-empty p,
+.activity-error p {
+  margin: 0;
+
+  color: #78696d;
+
+  line-height: 1.5;
+}
+
+.empty-icon {
+  color: #9b4964;
+
+  font-size: 38px;
+}
+
+
+/* =========================================
+   ERROR BUTTON
+========================================= */
+
+.activity-error button {
+  margin-top: 16px;
+
+  padding: 10px 18px;
+
+  background: #913a58;
+
+  color: #ffffff;
+
+  border: none;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.activity-error button:hover {
+  background: #7d304b;
+
+  transform: translateY(-1px);
+}
+
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 1000px) {
+
+  .activity-content {
+    max-width: 900px;
+
+    padding:
+      55px 30px
+      70px;
+  }
+
+  .activity-heading h1 {
+    font-size: 34px;
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - SMALL TABLET
+========================================= */
+
+@media (max-width: 800px) {
+
+  .activity-content {
+    padding:
+      40px 22px
+      60px;
+  }
+
+  .activity-heading {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 20px;
+  }
+
+  .activity-count {
+    width: 100%;
+
+    min-width: 0;
+  }
+
+  .activity-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .activity-card-header {
+    flex-direction: column;
+
+    gap: 10px;
+  }
+
+  .activity-date {
+    white-space: normal;
+  }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - MOBILE
+========================================= */
+
+@media (max-width: 550px) {
+
+  .activity-content {
+    padding:
+      30px 15px
+      50px;
+  }
+
+  .activity-heading {
+    margin-bottom: 25px;
+  }
+
+  .activity-eyebrow {
+    font-size: 11px;
+  }
+
+  .activity-heading h1 {
+    font-size: 29px;
+  }
+
+  .activity-subtitle {
+    font-size: 14px;
+  }
+
+  .activity-controls {
+    padding: 12px;
+  }
+
+  .activity-timeline {
+    padding:
+      8px 14px;
+  }
+
+  .activity-card {
+    grid-template-columns:
+      42px minmax(0, 1fr);
+  }
+
+  .timeline-dot {
+    width: 30px;
+    height: 30px;
+
+    font-size: 11px;
+  }
+
+  .activity-card-content {
+    padding:
+      22px 0
+      24px 10px;
+  }
+
+  .activity-meta {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+}

@@ -1,0 +1,650 @@
+const Issue = require("../models/Issue");
+const Activity = require("../models/Activity");
+
+// =====================================================
+// ALLOWED VALUES
+// =====================================================
+
+const VALID_STATUSES = [
+  "Open",
+  "In Progress",
+  "In Review",
+  "Resolved",
+];
+
+const VALID_PRIORITIES = [
+  "Low",
+  "Medium",
+  "High",
+  "Critical",
+];
+
+const VALID_SEVERITIES = [
+  "Low",
+  "Medium",
+  "High",
+  "Critical",
+];
+
+const VALID_CATEGORIES = [
+  "UI",
+  "Authentication",
+  "Backend",
+  "Database",
+  "API",
+  "Performance",
+  "Security",
+  "Navigation",
+  "Checkout",
+  "Other",
+];
+
+// =====================================================
+// CREATE ISSUE
+// POST /api/issues
+// =====================================================
+
+exports.createIssue = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      report,
+      status,
+      priority,
+      project,
+      severity,
+      category,
+    } = req.body;
+
+    if (!description || !description.trim()) {
+      return res.status(400).json({
+        message: "Description is required",
+      });
+    }
+
+    // Validate status
+    if (status && !VALID_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
+    }
+
+    // Validate priority
+    if (
+      priority &&
+      !VALID_PRIORITIES.includes(priority)
+    ) {
+      return res.status(400).json({
+        message: "Invalid priority",
+      });
+    }
+
+    // Validate severity
+    if (
+      severity &&
+      !VALID_SEVERITIES.includes(severity)
+    ) {
+      return res.status(400).json({
+        message: "Invalid severity",
+      });
+    }
+
+    // Validate category
+    if (
+      category &&
+      !VALID_CATEGORIES.includes(category)
+    ) {
+      return res.status(400).json({
+        message: "Invalid category",
+      });
+    }
+
+    // Create issue
+    const issue = await Issue.create({
+      title: title?.trim(),
+      description: description.trim(),
+      report,
+
+      status: status || "Open",
+      priority: priority || "Medium",
+      severity: severity || "Medium",
+      category: category || "Other",
+
+      project: project || undefined,
+
+      reportedBy: req.user.id,
+    });
+
+    // =================================================
+    // RECORD ISSUE CREATED
+    // =================================================
+
+    await Activity.create({
+      issue: issue._id,
+      user: req.user.id,
+      action: "Issue created",
+      details: `Created issue "${
+        issue.title || "Untitled Issue"
+      }"`,
+    });
+
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error("Create issue error:", error);
+
+    res.status(500).json({
+      message: "Failed to create issue",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// GET ALL ISSUES OF LOGGED-IN USER
+// GET /api/issues
+// =====================================================
+
+exports.getIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({
+      reportedBy: req.user.id,
+    })
+      .populate("reportedBy", "name email")
+      .populate("project", "projectName")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Get issues error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch issues",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// GET SAVED ISSUES
+// GET /api/issues/saved
+// =====================================================
+
+exports.getSavedIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({
+      reportedBy: req.user.id,
+    })
+      .populate("reportedBy", "name email")
+      .populate("project", "projectName")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Get saved issues error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch saved issues",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// SAVE AI-GENERATED ISSUE
+// POST /api/issues/save
+// =====================================================
+
+exports.saveIssue = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      report,
+      priority,
+      severity,
+      category,
+      project,
+    } = req.body;
+
+    if (!description || !description.trim()) {
+      return res.status(400).json({
+        message: "Description is required",
+      });
+    }
+
+    if (
+      priority &&
+      !VALID_PRIORITIES.includes(priority)
+    ) {
+      return res.status(400).json({
+        message: "Invalid priority",
+      });
+    }
+
+    if (
+      severity &&
+      !VALID_SEVERITIES.includes(severity)
+    ) {
+      return res.status(400).json({
+        message: "Invalid severity",
+      });
+    }
+
+    if (
+      category &&
+      !VALID_CATEGORIES.includes(category)
+    ) {
+      return res.status(400).json({
+        message: "Invalid category",
+      });
+    }
+
+    // Create saved AI issue
+    const issue = await Issue.create({
+      title: title?.trim(),
+      description: description.trim(),
+      report,
+
+      status: "Open",
+      priority: priority || "Medium",
+      severity: severity || "Medium",
+      category: category || "Other",
+
+      project: project || undefined,
+
+      reportedBy: req.user.id,
+    });
+
+    // =================================================
+    // RECORD AI ISSUE CREATED
+    // =================================================
+
+    await Activity.create({
+  issue: issue._id,
+
+  // Keep a permanent copy of the title
+  issueTitle:
+    issue.title ||
+    issue.description ||
+    "Untitled Issue",
+
+  user: req.user.id,
+
+  action: "Issue created",
+
+  details: `Saved AI-generated issue "${
+    issue.title ||
+    issue.description ||
+    "Untitled Issue"
+  }"`,
+});
+
+    res.status(201).json(issue);
+  } catch (error) {
+    console.error("Save issue error:", error);
+
+    res.status(500).json({
+      message: "Failed to save issue",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// UPDATE ISSUE
+// PUT /api/issues/:id
+// =====================================================
+
+exports.updateIssue = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      status,
+      priority,
+      severity,
+      category,
+      project,
+    } = req.body;
+
+    // =================================================
+    // VALIDATION
+    // =================================================
+
+    if (status && !VALID_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status",
+      });
+    }
+
+    if (
+      priority &&
+      !VALID_PRIORITIES.includes(priority)
+    ) {
+      return res.status(400).json({
+        message: "Invalid priority",
+      });
+    }
+
+    if (
+      severity &&
+      !VALID_SEVERITIES.includes(severity)
+    ) {
+      return res.status(400).json({
+        message: "Invalid severity",
+      });
+    }
+
+    if (
+      category &&
+      !VALID_CATEGORIES.includes(category)
+    ) {
+      return res.status(400).json({
+        message: "Invalid category",
+      });
+    }
+
+    // =================================================
+    // FIND ISSUE BEFORE UPDATE
+    // =================================================
+
+    const existingIssue = await Issue.findOne({
+      _id: req.params.id,
+      reportedBy: req.user.id,
+    });
+
+    if (!existingIssue) {
+      return res.status(404).json({
+        message:
+          "Issue not found or you do not have permission to update it",
+      });
+    }
+
+    // =================================================
+    // BUILD UPDATE DATA
+    // =================================================
+
+    const updateData = {};
+
+    if (title !== undefined) {
+      updateData.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      updateData.description =
+        description.trim();
+    }
+
+    if (status !== undefined) {
+      updateData.status = status;
+    }
+
+    if (priority !== undefined) {
+      updateData.priority = priority;
+    }
+
+    if (severity !== undefined) {
+      updateData.severity = severity;
+    }
+
+    if (category !== undefined) {
+      updateData.category = category;
+    }
+
+    if (project !== undefined) {
+      updateData.project = project || null;
+    }
+
+    // =================================================
+    // UPDATE ISSUE
+    // =================================================
+
+    const issue = await Issue.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        reportedBy: req.user.id,
+      },
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate("reportedBy", "name email")
+      .populate("project", "projectName");
+
+    if (!issue) {
+      return res.status(404).json({
+        message:
+          "Issue not found or you do not have permission to update it",
+      });
+    }
+
+    // =================================================
+    // ACTIVITY HISTORY
+    // =================================================
+
+    const activities = [];
+
+    // -------------------------
+    // STATUS CHANGED
+    // -------------------------
+
+    if (
+      status !== undefined &&
+      status !== existingIssue.status
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Status changed",
+        details:
+          `${existingIssue.status} → ${status}`,
+      });
+    }
+
+    // -------------------------
+    // PRIORITY CHANGED
+    // -------------------------
+
+    if (
+      priority !== undefined &&
+      priority !== existingIssue.priority
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Priority changed",
+        details:
+          `${existingIssue.priority} → ${priority}`,
+      });
+    }
+
+    // -------------------------
+    // SEVERITY CHANGED
+    // -------------------------
+
+    if (
+      severity !== undefined &&
+      severity !== existingIssue.severity
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Severity changed",
+        details:
+          `${existingIssue.severity} → ${severity}`,
+      });
+    }
+
+    // -------------------------
+    // CATEGORY CHANGED
+    // -------------------------
+
+    if (
+      category !== undefined &&
+      category !== existingIssue.category
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Category changed",
+        details:
+          `${existingIssue.category} → ${category}`,
+      });
+    }
+
+    // -------------------------
+    // TITLE CHANGED
+    // -------------------------
+
+    if (
+      title !== undefined &&
+      title.trim() !== existingIssue.title
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Title changed",
+        details: `"${
+          existingIssue.title || "Untitled Issue"
+        }" → "${title.trim()}"`,
+      });
+    }
+
+    // -------------------------
+    // DESCRIPTION CHANGED
+    // -------------------------
+
+    if (
+      description !== undefined &&
+      description.trim() !==
+        existingIssue.description
+    ) {
+      activities.push({
+        issue: issue._id,
+        user: req.user.id,
+        action: "Description updated",
+        details:
+          "Issue description was updated",
+      });
+    }
+
+    // -------------------------
+    // PROJECT CHANGED
+    // -------------------------
+
+    if (project !== undefined) {
+      const oldProject =
+        existingIssue.project?.toString() ||
+        null;
+
+      const newProject = project || null;
+
+      if (oldProject !== newProject) {
+        activities.push({
+          issue: issue._id,
+          user: req.user.id,
+          action: "Project changed",
+          details:
+            "Issue project was changed",
+        });
+      }
+    }
+
+    // =================================================
+    // SAVE ACTIVITIES
+    // =================================================
+
+    if (activities.length > 0) {
+      await Activity.insertMany(activities);
+    }
+
+    res.status(200).json({
+      message: "Issue updated successfully",
+      issue,
+    });
+  } catch (error) {
+    console.error("Update issue error:", error);
+
+    res.status(500).json({
+      message: "Failed to update issue",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// DELETE ISSUE
+// DELETE /api/issues/:id
+// =====================================================
+
+exports.deleteIssue = async (req, res) => {
+  try {
+    // ==========================================
+    // 1. FIND ISSUE
+    // ==========================================
+
+    const issue = await Issue.findOne({
+      _id: req.params.id,
+      reportedBy: req.user.id,
+    });
+
+    if (!issue) {
+      return res.status(404).json({
+        message:
+          "Issue not found or you do not have permission to delete it",
+      });
+    }
+
+    // Save title before deleting the issue
+    const issueTitle =
+      issue.title ||
+      issue.description ||
+      "Untitled Issue";
+
+    // ==========================================
+    // 2. CREATE DELETION ACTIVITY
+    // ==========================================
+
+    await Activity.create({
+      issue: null,
+      issueTitle: issueTitle,
+      user: req.user.id,
+      action: "Issue deleted",
+      details: `Deleted issue "${issueTitle}"`,
+    });
+
+    // ==========================================
+    // 3. DELETE ISSUE
+    // ==========================================
+
+    await Issue.deleteOne({
+      _id: issue._id,
+    });
+
+    // ==========================================
+    // 4. SEND RESPONSE
+    // ==========================================
+
+    res.status(200).json({
+      message: "Issue deleted successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Delete issue error:",
+      error
+    );
+
+    res.status(500).json({
+      message: "Failed to delete issue",
+      error: error.message,
+    });
+  }
+};
+
+  
+    
