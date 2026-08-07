@@ -6,6 +6,11 @@ import {
   useDraggable,
   useDroppable,
 } from "@dnd-kit/core";
+import Modal from "../components/Modal";
+import CommentsModal from "../components/CommentsModal";
+import AttachmentModal from "../components/AttachmentModal";
+import AIReportModal from "../components/AIReportModal";
+import { getSprints } from "../services/sprintService";
 
 export default function IssuesPage() {
   const navigate = useNavigate();
@@ -16,20 +21,18 @@ export default function IssuesPage() {
 
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
-  const [expandedReport, setExpandedReport] = useState(null);
+  const [commentModalIssue, setCommentModalIssue] = useState(null);
+
+const [attachmentModalIssue, setAttachmentModalIssue] = useState(null);
   // =====================================================
 // COMMENTS
 // =====================================================
-
-const [expandedComments, setExpandedComments] =
-  useState(null);
-
-  // ==========================================
+const [expandedComments, setExpandedComments] =useState(null);
+ // ==========================================
 // ATTACHMENT STATES
 // ==========================================
 
-const [expandedAttachments, setExpandedAttachments] =
-  useState(null);
+const [expandedAttachments, setExpandedAttachments] =useState(null);
 
 const [attachments, setAttachments] = useState({});
 
@@ -40,19 +43,17 @@ const [uploadingFile, setUploadingFile] = useState(null);
 // ATTACHMENT PREVIEW
 // ==========================================
 
-const [previewAttachment, setPreviewAttachment] =
-  useState(null);
+const [previewAttachment, setPreviewAttachment] =useState(null);
 
 const [comments, setComments] = useState({});
 
-const [commentText, setCommentText] =
-  useState({});
+const [commentText, setCommentText] =useState({});
 
-const [commentsLoading, setCommentsLoading] =
-  useState(null);
+const [commentsLoading, setCommentsLoading] =useState(null);
 
-const [commentSubmitting, setCommentSubmitting] =
-  useState(null);
+const [commentSubmitting, setCommentSubmitting] =useState(null);
+const [selectedReport, setSelectedReport] = useState(null);
+const [sprints, setSprints] = useState([]);
 
   const token = localStorage.getItem("token");
 
@@ -108,7 +109,17 @@ const [commentSubmitting, setCommentSubmitting] =
 
   useEffect(() => {
     fetchIssues();
+    fetchSprints();
   }, []);
+
+  const fetchSprints = async () => {
+  try {
+    const data = await getSprints();
+    setSprints(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // =====================================================
 // FETCH COMMENTS
@@ -464,158 +475,156 @@ const deleteComment = async (
       setUpdatingId(null);
     }
   };
+// =====================================================
+// ATTACHMENTS
+// =====================================================
 
-  // =====================================================
-  // ATTACHMENTS
-  // =====================================================
-
-  const fetchAttachments = async (issueId) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:5000/api/attachments/${issueId}`,
-        getAuthConfig()
-      );
-
-      const attachmentData = Array.isArray(res.data)
-        ? res.data
-        : Array.isArray(res.data?.attachments)
-          ? res.data.attachments
-          : [];
-
-      setAttachments((previous) => ({
-        ...previous,
-        [issueId]: attachmentData,
-      }));
-    } catch (error) {
-      console.error(
-        "Fetch attachments error:",
-        error.response?.data || error.message
-      );
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
-        return;
-      }
-
-      setAttachments((previous) => ({
-        ...previous,
-        [issueId]: [],
-      }));
-
-      alert(
-        error.response?.data?.message ||
-          "Failed to load attachments"
-      );
-    }
-  };
-
-  const toggleAttachments = async (issueId) => {
-    if (expandedAttachments === issueId) {
-      setExpandedAttachments(null);
-      return;
-    }
-
-    setExpandedAttachments(issueId);
-    await fetchAttachments(issueId);
-  };
-
-  const handleFileSelect = (issueId, file) => {
-    setSelectedFiles((previous) => ({
-      ...previous,
-      [issueId]: file,
-    }));
-  };
-
-  const uploadAttachment = async (issueId) => {
-    const file = selectedFiles[issueId];
-
-    if (!file) {
-      alert("Please select a file first.");
-      return;
-    }
-
-    try {
-      setUploadingFile(issueId);
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      await axios.post(
-        `http://localhost:5000/api/attachments/${issueId}`,
-        formData,
-        getAuthConfig()
-      );
-
-      setSelectedFiles((previous) => ({
-        ...previous,
-        [issueId]: null,
-      }));
-
-      await fetchAttachments(issueId);
-    } catch (error) {
-      console.error(
-        "Upload attachment error:",
-        error.response?.data || error.message
-      );
-
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
-        return;
-      }
-
-      alert(
-        error.response?.data?.message ||
-          "Failed to upload attachment"
-      );
-    } finally {
-      setUploadingFile(null);
-    }
-  };
-
-  const deleteAttachment = async (issueId, attachmentId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this attachment?"
+const fetchAttachments = async (issueId) => {
+  try {
+    const res = await axios.get(
+      `http://localhost:5000/api/attachments/${issueId}`,
+      getAuthConfig()
     );
 
-    if (!confirmed) {
+    const attachmentData = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.attachments)
+      ? res.data.attachments
+      : [];
+
+    setAttachments((prev) => ({
+      ...prev,
+      [issueId]: attachmentData,
+    }));
+  } catch (error) {
+    console.error(
+      "Fetch attachments error:",
+      error.response?.data || error.message
+    );
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
       return;
     }
 
-    try {
-      await axios.delete(
-        `http://localhost:5000/api/attachments/file/${attachmentId}`,
-        getAuthConfig()
-      );
+    setAttachments((prev) => ({
+      ...prev,
+      [issueId]: [],
+    }));
 
-      setAttachments((previous) => ({
-        ...previous,
-        [issueId]: (previous[issueId] || []).filter(
-          (attachment) => attachment._id !== attachmentId
-        ),
-      }));
-    } catch (error) {
-      console.error(
-        "Delete attachment error:",
-        error.response?.data || error.message
-      );
+    alert(
+      error.response?.data?.message ||
+      "Failed to load attachments"
+    );
+  }
+};
 
-      if (error.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/login", { replace: true });
-        return;
-      }
+const toggleAttachments = async (issueId) => {
+  if (expandedAttachments === issueId) {
+    setExpandedAttachments(null);
+    return;
+  }
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to delete attachment"
-      );
+  setExpandedAttachments(issueId);
+  await fetchAttachments(issueId);
+};
+
+const handleFileSelect = (issueId, file) => {
+  setSelectedFiles((prev) => ({
+    ...prev,
+    [issueId]: file,
+  }));
+};
+
+const uploadAttachment = async (issueId) => {
+  const file = selectedFiles[issueId];
+
+  if (!file) {
+    alert("Please select a file first.");
+    return;
+  }
+
+  try {
+    setUploadingFile(issueId);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    await axios.post(
+      `http://localhost:5000/api/attachments/${issueId}`,
+      formData,
+      getAuthConfig()
+    );
+
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [issueId]: null,
+    }));
+
+    await fetchAttachments(issueId);
+  } catch (error) {
+    console.error(
+      "Upload attachment error:",
+      error.response?.data || error.message
+    );
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+      return;
     }
-  };
+
+    alert(
+      error.response?.data?.message ||
+      "Failed to upload attachment"
+    );
+  } finally {
+    setUploadingFile(null);
+  }
+};
+
+const deleteAttachment = async (issueId, attachmentId) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this attachment?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await axios.delete(
+      `http://localhost:5000/api/attachments/file/${attachmentId}`,
+      getAuthConfig()
+    );
+
+    setAttachments((prev) => ({
+      ...prev,
+      [issueId]: (prev[issueId] || []).filter(
+        (attachment) => attachment._id !== attachmentId
+      ),
+    }));
+  } catch (error) {
+    console.error(
+      "Delete attachment error:",
+      error.response?.data || error.message
+    );
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    alert(
+      error.response?.data?.message ||
+      "Failed to delete attachment"
+    );
+  }
+};
+ 
 
   // =====================================================
   // FILTER ISSUES
@@ -789,9 +798,10 @@ const deleteComment = async (
       </select>
     </div>
   );
+  
 
   // =====================================================
-  // DRAGGABLE ISSUE CARD
+  // DRAGGABLE ISSUE CARD//
   // =====================================================
 
   const IssueCard = ({ issue }) => {
@@ -825,7 +835,18 @@ const deleteComment = async (
       ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
       : undefined;
 
+      const statusFlow = {
+  Open: ["Open", "In Progress"],
+  "In Progress": ["In Progress", "In Review"],
+  "In Review": ["In Review", "Resolved"],
+  Resolved: ["Resolved"],
+};
+
+const availableStatusOptions =
+  statusFlow[status] || ["Open"];
     return (
+
+      
       <div
         ref={setNodeRef}
         style={{
@@ -967,6 +988,22 @@ const deleteComment = async (
             : ""}
         </div>
 
+        {issue.sprint && (
+  <div
+    style={{
+      background: "#f4e2e5",
+      borderRadius: "8px",
+      padding: "8px 10px",
+      marginBottom: "10px",
+      color: "#702f43",
+      fontSize: "13px",
+      fontWeight: "600",
+    }}
+  >
+     Sprint: {issue.sprint.name}
+  </div>
+)}
+
         {/* PROJECT */}
 
         {issue.project?.projectName && (
@@ -985,18 +1022,43 @@ const deleteComment = async (
           </div>
         )}
 
+        <div style={{ marginBottom: "15px" }}>
+  <label style={fieldLabelStyle}>
+    SPRINT
+  </label>
+
+  <select
+    value={issue.sprint?._id || ""}
+    disabled={isUpdating}
+    onChange={(e) =>
+      updateIssueField(
+        issue._id,
+        "sprint",
+        e.target.value || null
+      )
+    }
+    style={selectStyle}
+  >
+    <option value="">No Sprint</option>
+
+    {sprints.map((sprint) => (
+      <option
+        key={sprint._id}
+        value={sprint._id}
+      >
+        {sprint.name}
+      </option>
+    ))}
+  </select>
+</div>
+
         {/* STATUS */}
 
         <FieldSelect
           label="STATUS"
           value={status}
           disabled={isUpdating}
-          options={[
-            "Open",
-            "In Progress",
-            "In Review",
-            "Resolved",
-          ]}
+          options={availableStatusOptions}
           onChange={(value) =>
             updateIssueField(
               issue._id,
@@ -1095,76 +1157,62 @@ const deleteComment = async (
 >
   {/* AI REPORT BUTTON */}
 
-  {issue.report && (
-    <button
-      type="button"
-      onClick={() =>
-        setExpandedReport(
-          expandedReport === issue._id
-            ? null
-            : issue._id
-        )
-      }
-      style={{
-        width: "100%",
-        minWidth: 0,
-        padding: "9px 6px",
-        border: "none",
-        borderRadius: "8px",
-        background: "#f4e2e5",
-        color: "#702f43",
-        cursor: "pointer",
-        fontWeight: "600",
-        fontSize: "13px",
-      }}
-    >
-      {expandedReport === issue._id
-        ? "Hide AI Report"
-        : "View AI Report"}
-    </button>
-  )}
-
-  {/* COMMENTS BUTTON */}
-
+{issue.report && (
   <button
     type="button"
-    onClick={() =>
-      toggleComments(issue._id)
-    }
+    onClick={() => setSelectedReport(issue)}
     style={{
       width: "100%",
       minWidth: 0,
       padding: "9px 6px",
       border: "none",
       borderRadius: "8px",
-
-      background:
-        expandedComments === issue._id
-          ? "#702f43"
-          : "#eee3df",
-
-      color:
-        expandedComments === issue._id
-          ? "#ffffff"
-          : "#702f43",
-
+      background: "#f4e2e5",
+      color: "#702f43",
       cursor: "pointer",
       fontWeight: "600",
       fontSize: "13px",
     }}
   >
-    {expandedComments === issue._id
-      ? "Hide Comments"
-      : "Comments"}
+    View AI Report
   </button>
+)}
+      
+
+  {/* COMMENTS BUTTON */}
+
+<button
+  type="button"
+  onClick={() => {
+    console.log("Comments clicked");
+    console.log(issue);
+    setCommentModalIssue(issue);
+  }}
+
+  style={{
+    width: "100%",
+    minWidth: 0,
+    padding: "9px 6px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#eee3df",
+    color: "#702f43",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "13px",
+  }}
+>
+  Comments
+</button>
 
   {/* ATTACHMENTS BUTTON */}
 
 <button
   type="button"
-  onClick={() =>
-    toggleAttachments(issue._id)
-  }
+  onClick={async () => {
+  setAttachmentModalIssue(issue);
+  await fetchAttachments(issue._id);
+}}
   style={{
     gridColumn: "1 / -1",
     width: "100%",
@@ -1393,42 +1441,7 @@ const deleteComment = async (
         
          {/* AI REPORT */}
 
-        {expandedReport === issue._id &&
-          issue.report && (
-            <div
-              style={{
-                marginTop: "15px",
-                padding: "15px",
-                background: "#fdf5f3",
-                borderRadius: "10px",
-                border:
-                  "1px solid #eadbd6",
-              }}
-            >
-              <h4
-                style={{
-                  marginTop: 0,
-                  color: "#702f43",
-                }}
-              >
-                AI Analysis
-              </h4>
-
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  margin: 0,
-                  color: "#4b3b3f",
-                  fontSize: "12px",
-                  lineHeight: "1.6",
-                  fontFamily: "inherit",
-                }}
-              >
-                {issue.report}
-              </pre>
-            </div>
-          )}
+      
           {/* COMMENTS */}
 
 {expandedComments === issue._id && (
@@ -2272,6 +2285,50 @@ const deleteComment = async (
           </div>
         </div>
       )}
+      <CommentsModal
+  open={commentModalIssue !== null}
+  onClose={() => setCommentModalIssue(null)}
+  issue={commentModalIssue}
+  comments={comments}
+  commentsLoading={commentsLoading === commentModalIssue?._id}
+  commentText={commentText}
+  setCommentText={setCommentText}
+  addComment={addComment}
+  deleteComment={deleteComment}
+  commentSubmitting={commentSubmitting}
+/>
+<AttachmentModal
+  open={attachmentModalIssue !== null}
+  onClose={() => setAttachmentModalIssue(null)}
+  issue={attachmentModalIssue}
+  attachments={
+    attachmentModalIssue
+      ? attachments[attachmentModalIssue._id] || []
+      : []
+  }
+  selectedFile={
+    attachmentModalIssue
+      ? selectedFiles[attachmentModalIssue._id]
+      : null
+  }
+  onFileSelect={(file) =>
+    handleFileSelect(attachmentModalIssue._id, file)
+  }
+  onUpload={() =>
+    uploadAttachment(attachmentModalIssue._id)
+  }
+  onDelete={deleteAttachment}
+  uploading={
+    uploadingFile === attachmentModalIssue?._id
+  }
+  onPreview={(attachment) =>
+    setPreviewAttachment(attachment)
+  }
+/>
+<AIReportModal
+  issue={selectedReport}
+  onClose={() => setSelectedReport(null)}
+/>
     </div>
   );
 }

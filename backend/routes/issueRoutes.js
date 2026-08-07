@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const auth = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const {
   createIssue,
@@ -12,21 +12,35 @@ const {
   getSavedIssues,
 } = require("../controllers/issueController");
 
-// Create normal issue
-router.post("/", auth, createIssue);
 
-// Get logged-in user's issues
-router.get("/", auth, getIssues);
+// =========================================
+// CREATE ISSUE
+// =========================================
+router.post("/", authMiddleware, createIssue);
 
-// Saved issue routes MUST come before /:id
-router.post("/save", auth, saveIssue);
+// =========================================
+// GET ALL ISSUES OF LOGGED-IN USER
+// =========================================
+router.get("/", authMiddleware, getIssues);
 
-router.get("/saved", auth, getSavedIssues);
+// =========================================
+// SAVE ISSUE
+// =========================================
+router.post("/save", authMiddleware, saveIssue);
 
-// Update issue
-router.put("/:id", auth, updateIssue);
+// =========================================
+// GET SAVED ISSUES
+// =========================================
+router.get("/saved", authMiddleware, getSavedIssues);
 
-// Delete issue
-router.delete("/:id", auth, deleteIssue);
+// =========================================
+// UPDATE ISSUE
+// =========================================
+router.put("/:id", authMiddleware, updateIssue);
+
+// =========================================
+// DELETE ISSUE
+// =========================================
+router.delete("/:id", authMiddleware, deleteIssue);
 
 module.exports = router;

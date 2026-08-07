@@ -13,6 +13,7 @@ import ProjectPage from "./pages/ProjectPage";
 import IssuesPage from "./pages/IssuesPage";
 import CreateIssueForm from "./pages/CreateIssueForm";
 import ActivityPage from "./pages/ActivityPage";
+import SprintPage from "./pages/SprintPage";
 
 import Layout from "./components/Layout";
 
@@ -89,6 +90,7 @@ function App() {
   element={<ActivityPage />}
 />
 
+<Route path="/sprints" element={<SprintPage />} />
         </Route>
 
         {/* ==========================

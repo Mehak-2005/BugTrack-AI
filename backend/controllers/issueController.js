@@ -55,6 +55,7 @@ exports.createIssue = async (req, res) => {
       project,
       severity,
       category,
+      sprint,
     } = req.body;
 
     if (!description || !description.trim()) {
@@ -112,6 +113,7 @@ exports.createIssue = async (req, res) => {
       category: category || "Other",
 
       project: project || undefined,
+      sprint: sprint || undefined,
 
       reportedBy: req.user.id,
     });
@@ -152,6 +154,7 @@ exports.getIssues = async (req, res) => {
     })
       .populate("reportedBy", "name email")
       .populate("project", "projectName")
+      .populate("sprint", "name")
       .sort({ createdAt: -1 });
 
     res.status(200).json(issues);
@@ -165,30 +168,6 @@ exports.getIssues = async (req, res) => {
   }
 };
 
-// =====================================================
-// GET SAVED ISSUES
-// GET /api/issues/saved
-// =====================================================
-
-exports.getSavedIssues = async (req, res) => {
-  try {
-    const issues = await Issue.find({
-      reportedBy: req.user.id,
-    })
-      .populate("reportedBy", "name email")
-      .populate("project", "projectName")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(issues);
-  } catch (error) {
-    console.error("Get saved issues error:", error);
-
-    res.status(500).json({
-      message: "Failed to fetch saved issues",
-      error: error.message,
-    });
-  }
-};
 
 // =====================================================
 // SAVE AI-GENERATED ISSUE
@@ -256,6 +235,33 @@ exports.saveIssue = async (req, res) => {
       reportedBy: req.user.id,
     });
 
+
+    // =====================================================
+// GET SAVED ISSUES
+// GET /api/issues/saved
+// =====================================================
+
+exports.getSavedIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({
+      reportedBy: req.user.id,
+    })
+      .populate("reportedBy", "name email")
+      .populate("project", "projectName")
+      .populate("sprint", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Get saved issues error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch saved issues",
+      error: error.message,
+    });
+  }
+};
+
     // =================================================
     // RECORD AI ISSUE CREATED
     // =================================================
@@ -291,6 +297,8 @@ exports.saveIssue = async (req, res) => {
   }
 };
 
+
+
 // =====================================================
 // UPDATE ISSUE
 // PUT /api/issues/:id
@@ -306,6 +314,7 @@ exports.updateIssue = async (req, res) => {
       severity,
       category,
       project,
+      sprint,
     } = req.body;
 
     // =================================================
@@ -361,7 +370,30 @@ exports.updateIssue = async (req, res) => {
       });
     }
 
+
     // =================================================
+// STATUS WORKFLOW VALIDATION
+// =================================================
+
+if (status !== undefined) {
+  const allowedTransitions = {
+    Open: ["Open", "In Progress"],
+    "In Progress": ["In Progress", "In Review"],
+    "In Review": ["In Review", "Resolved"],
+    Resolved: ["Resolved"],
+  };
+
+  const currentStatus = existingIssue.status;
+
+  if (!allowedTransitions[currentStatus]?.includes(status)) {
+    return res.status(400).json({
+      message: `Invalid status transition: ${currentStatus} → ${status}`,
+    });
+  }
+}
+
+
+ // =================================================
     // BUILD UPDATE DATA
     // =================================================
 
@@ -396,6 +428,10 @@ exports.updateIssue = async (req, res) => {
       updateData.project = project || null;
     }
 
+    if (sprint !== undefined) {
+      updateData.sprint = sprint;
+    }
+
     // =================================================
     // UPDATE ISSUE
     // =================================================
@@ -414,7 +450,8 @@ exports.updateIssue = async (req, res) => {
       }
     )
       .populate("reportedBy", "name email")
-      .populate("project", "projectName");
+      .populate("project", "projectName")
+      .populate("sprint", "name");
 
     if (!issue) {
       return res.status(404).json({
@@ -555,6 +592,26 @@ exports.updateIssue = async (req, res) => {
       }
     }
 
+    // -------------------------
+// SPRINT CHANGED
+// -------------------------
+
+if (sprint !== undefined) {
+  const oldSprint =
+    existingIssue.sprint?.toString() || null;
+
+  const newSprint = sprint || null;
+
+  if (oldSprint !== newSprint) {
+    activities.push({
+      issue: issue._id,
+      user: req.user.id,
+      action: "Sprint changed",
+      details: "Issue sprint was changed",
+    });
+  }
+}
+
     // =================================================
     // SAVE ACTIVITIES
     // =================================================
@@ -641,6 +698,32 @@ exports.deleteIssue = async (req, res) => {
 
     res.status(500).json({
       message: "Failed to delete issue",
+      error: error.message,
+    });
+  }
+};
+
+// =====================================================
+// GET SAVED ISSUES
+// GET /api/issues/saved
+// =====================================================
+
+exports.getSavedIssues = async (req, res) => {
+  try {
+    const issues = await Issue.find({
+      reportedBy: req.user.id,
+    })
+      .populate("reportedBy", "name email")
+      .populate("project", "projectName")
+      .populate("sprint", "name")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(issues);
+  } catch (error) {
+    console.error("Get saved issues error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch saved issues",
       error: error.message,
     });
   }

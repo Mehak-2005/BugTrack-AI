@@ -114,6 +114,10 @@ export default function Layout() {
             Activity History
           </NavLink>
 
+          <NavLink to="/sprints">
+  🏃 Sprints
+</NavLink>
+
         </nav>
 
         {/* ======================================

@@ -10,7 +10,7 @@ const issueSchema = new mongoose.Schema(
     description: {
       type: String,
       required: true,
-      trim:true,
+      trim: true,
     },
 
     report: {
@@ -18,27 +18,18 @@ const issueSchema = new mongoose.Schema(
     },
 
     status: {
-  type: String,
-  enum: [
-    "Open",
-    "In Progress",
-    "In Review",
-    "Resolved",
-  ],
-  default: "Open",
-},
+      type: String,
+      enum: [
+        "Open",
+        "In Progress",
+        "In Review",
+        "Resolved",
+        "Closed",
+      ],
+      default: "Open",
+    },
 
     priority: {
-      type: String,
-      enum: ["Low", "Medium", "High", "Critical"],
-      default: "Medium",
-    },
-
-    project: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-    },
-      severity: {
       type: String,
       enum: [
         "Low",
@@ -48,7 +39,31 @@ const issueSchema = new mongoose.Schema(
       ],
       default: "Medium",
     },
- // ISSUE CATEGORY
+
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+    },
+
+    // Sprint assigned to this issue
+    sprint: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Sprint",
+      default: null,
+    },
+
+    severity: {
+      type: String,
+      enum: [
+        "Low",
+        "Medium",
+        "High",
+        "Critical",
+      ],
+      default: "Medium",
+    },
+
+    // Issue Category
     category: {
       type: String,
       enum: [
@@ -65,12 +80,8 @@ const issueSchema = new mongoose.Schema(
       ],
       default: "Other",
     },
-// PROJECT
-project: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-    },
-    // USER WHO REPORTED ISSU
+
+    // User who reported the issue
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

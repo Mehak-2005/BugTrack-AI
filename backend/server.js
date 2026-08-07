@@ -13,6 +13,7 @@ const aiRoutes = require("./routes/aiRoutes");
 const commentRoutes = require("./routes/commentRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const activityRoutes = require("./routes/activityRoutes");
+const sprintRoutes = require("./routes/sprintRoutes");
 
 const app = express();
 app.use(
@@ -29,6 +30,8 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/sprints", sprintRoutes);
+
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))

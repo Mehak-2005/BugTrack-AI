@@ -20,6 +20,7 @@ const auth = (req, res, next) => {
       token,
       process.env.JWT_SECRET
     );
+    console.log("Decoded User:", decoded);
 
     req.user = decoded;
 
