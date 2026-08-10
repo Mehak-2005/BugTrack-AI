@@ -2,21 +2,33 @@ const mongoose = require("mongoose");
 
 const issueSchema = new mongoose.Schema(
   {
+    // ========================================
+    // ISSUE TITLE
+    // ========================================
     title: {
       type: String,
       trim: true,
     },
 
+    // ========================================
+    // ISSUE DESCRIPTION
+    // ========================================
     description: {
       type: String,
       required: true,
       trim: true,
     },
 
+    // ========================================
+    // AI GENERATED REPORT
+    // ========================================
     report: {
       type: String,
     },
 
+    // ========================================
+    // ISSUE STATUS
+    // ========================================
     status: {
       type: String,
       enum: [
@@ -29,6 +41,9 @@ const issueSchema = new mongoose.Schema(
       default: "Open",
     },
 
+    // ========================================
+    // PRIORITY
+    // ========================================
     priority: {
       type: String,
       enum: [
@@ -40,18 +55,26 @@ const issueSchema = new mongoose.Schema(
       default: "Medium",
     },
 
+    // ========================================
+    // PROJECT
+    // ========================================
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
     },
 
-    // Sprint assigned to this issue
+    // ========================================
+    // SPRINT
+    // ========================================
     sprint: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Sprint",
       default: null,
     },
 
+    // ========================================
+    // SEVERITY
+    // ========================================
     severity: {
       type: String,
       enum: [
@@ -63,7 +86,9 @@ const issueSchema = new mongoose.Schema(
       default: "Medium",
     },
 
-    // Issue Category
+    // ========================================
+    // ISSUE CATEGORY
+    // ========================================
     category: {
       type: String,
       enum: [
@@ -81,11 +106,23 @@ const issueSchema = new mongoose.Schema(
       default: "Other",
     },
 
-    // User who reported the issue
+    // ========================================
+    // USER WHO REPORTED THE ISSUE
+    // ========================================
     reportedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+
+    // ========================================
+    // SEMANTIC SEARCH EMBEDDING
+    // ========================================
+    // Stores the vector representation of the
+    // issue description for duplicate detection.
+    embedding: {
+      type: [Number],
+      default: [],
     },
   },
   {

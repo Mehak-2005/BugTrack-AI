@@ -1,6 +1,11 @@
 const Issue = require("../models/Issue");
 const Activity = require("../models/Activity");
 
+const {
+  generateEmbedding,
+  cosineSimilarity,
+} = require("../services/embeddingService");
+
 // =====================================================
 // ALLOWED VALUES
 // =====================================================
@@ -40,6 +45,118 @@ const VALID_CATEGORIES = [
 ];
 
 // =====================================================
+// DUPLICATE DETECTION CONFIGURATION
+// =====================================================
+
+// Similarity from 0 to 1.
+// 0.85 means 85% semantic similarity.
+const DUPLICATE_THRESHOLD = 0.85;
+   
+// =====================================================
+// FIND SIMILAR ISSUES
+// =====================================================
+
+const findSimilarIssues = async ({
+  description,
+  project,
+  excludeIssueId = null,
+}) => {
+  try {
+    // Generate embedding for the new description
+    const newEmbedding =
+      await generateEmbedding(description);
+
+    // ---------------------------------------------
+    // Find existing issues that have embeddings
+    // ---------------------------------------------
+
+    const query = {
+      embedding: {
+        $exists: true,
+        $ne: [],
+      },
+    };
+
+    // If project is provided, search within
+    // the same project.
+    if (project) {
+      query.project = project;
+    }
+
+    // Don't compare an issue with itself
+    if (excludeIssueId) {
+      query._id = {
+        $ne: excludeIssueId,
+      };
+    }
+
+    const existingIssues =
+      await Issue.find(query)
+        .select(
+          "_id title description status priority severity category project embedding"
+        )
+        .limit(100);
+
+    const similarIssues = [];
+
+    // ---------------------------------------------
+    // Calculate cosine similarity
+    // ---------------------------------------------
+
+    for (const existingIssue of existingIssues) {
+      if (
+        !Array.isArray(existingIssue.embedding) ||
+        existingIssue.embedding.length === 0
+      ) {
+        continue;
+      }
+
+      const similarity = cosineSimilarity(
+        newEmbedding,
+        existingIssue.embedding
+      );
+
+      if (similarity >= DUPLICATE_THRESHOLD) {
+        similarIssues.push({
+          issueId: existingIssue._id,
+          title:
+            existingIssue.title ||
+            "Untitled Issue",
+          description:
+            existingIssue.description,
+          status: existingIssue.status,
+          priority: existingIssue.priority,
+          severity: existingIssue.severity,
+          category: existingIssue.category,
+          similarity:
+            Math.round(similarity * 100) / 100,
+          similarityPercentage:
+            Math.round(similarity * 100),
+        });
+      }
+    }
+
+    // Highest similarity first
+    similarIssues.sort(
+      (a, b) =>
+        b.similarity - a.similarity
+    );
+
+    return {
+      embedding: newEmbedding,
+      similarIssues,
+    };
+  } catch (error) {
+    console.error(
+      "Duplicate detection error:",
+      error
+    );
+
+    throw error;
+  }
+};
+
+// =====================================================
 // CREATE ISSUE
 // POST /api/issues
 // =====================================================
@@ -58,20 +175,36 @@ exports.createIssue = async (req, res) => {
       sprint,
     } = req.body;
 
-    if (!description || !description.trim()) {
+    // =================================================
+    // VALIDATE DESCRIPTION
+    // =================================================
+
+    if (
+      !description ||
+      !description.trim()
+    ) {
       return res.status(400).json({
         message: "Description is required",
       });
     }
 
-    // Validate status
-    if (status && !VALID_STATUSES.includes(status)) {
+    // =================================================
+    // VALIDATE STATUS
+    // =================================================
+
+    if (
+      status &&
+      !VALID_STATUSES.includes(status)
+    ) {
       return res.status(400).json({
         message: "Invalid status",
       });
     }
 
-    // Validate priority
+    // =================================================
+    // VALIDATE PRIORITY
+    // =================================================
+
     if (
       priority &&
       !VALID_PRIORITIES.includes(priority)
@@ -81,7 +214,10 @@ exports.createIssue = async (req, res) => {
       });
     }
 
-    // Validate severity
+    // =================================================
+    // VALIDATE SEVERITY
+    // =================================================
+
     if (
       severity &&
       !VALID_SEVERITIES.includes(severity)
@@ -91,7 +227,10 @@ exports.createIssue = async (req, res) => {
       });
     }
 
-    // Validate category
+    // =================================================
+    // VALIDATE CATEGORY
+    // =================================================
+
     if (
       category &&
       !VALID_CATEGORIES.includes(category)
@@ -101,21 +240,65 @@ exports.createIssue = async (req, res) => {
       });
     }
 
-    // Create issue
+    // =================================================
+    // GENERATE EMBEDDING + CHECK DUPLICATES
+    // =================================================
+
+    const {
+      embedding,
+      similarIssues,
+    } = await findSimilarIssues({
+      description:
+        description.trim(),
+      project,
+    });
+
+    // =================================================
+    // DUPLICATE FOUND
+    // =================================================
+
+    if (similarIssues.length > 0) {
+      return res.status(409).json({
+        message:
+          "A similar issue already exists",
+        duplicate: true,
+        similarIssues,
+      });
+    }
+
+    // =================================================
+    // CREATE ISSUE
+    // =================================================
+
     const issue = await Issue.create({
       title: title?.trim(),
-      description: description.trim(),
+      description:
+        description.trim(),
       report,
 
-      status: status || "Open",
-      priority: priority || "Medium",
-      severity: severity || "Medium",
-      category: category || "Other",
+      status:
+        status || "Open",
 
-      project: project || undefined,
-      sprint: sprint || undefined,
+      priority:
+        priority || "Medium",
 
-      reportedBy: req.user.id,
+      severity:
+        severity || "Medium",
+
+      category:
+        category || "Other",
+
+      project:
+        project || undefined,
+
+      sprint:
+        sprint || undefined,
+
+      reportedBy:
+        req.user.id,
+
+      // Store semantic embedding
+      embedding,
     });
 
     // =================================================
@@ -127,16 +310,22 @@ exports.createIssue = async (req, res) => {
       user: req.user.id,
       action: "Issue created",
       details: `Created issue "${
-        issue.title || "Untitled Issue"
+        issue.title ||
+        "Untitled Issue"
       }"`,
     });
 
     res.status(201).json(issue);
+
   } catch (error) {
-    console.error("Create issue error:", error);
+    console.error(
+      "Create issue error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Failed to create issue",
+      message:
+        "Failed to create issue",
       error: error.message,
     });
   }
@@ -147,34 +336,56 @@ exports.createIssue = async (req, res) => {
 // GET /api/issues
 // =====================================================
 
-exports.getIssues = async (req, res) => {
+exports.getIssues = async (
+  req,
+  res
+) => {
   try {
-    const issues = await Issue.find({
-      reportedBy: req.user.id,
-    })
-      .populate("reportedBy", "name email")
-      .populate("project", "projectName")
-      .populate("sprint", "name")
-      .sort({ createdAt: -1 });
+    const issues =
+      await Issue.find({
+        reportedBy: req.user.id,
+      })
+        .populate(
+          "reportedBy",
+          "name email"
+        )
+        .populate(
+          "project",
+          "projectName"
+        )
+        .populate(
+          "sprint",
+          "name"
+        )
+        .sort({
+          createdAt: -1,
+        });
 
     res.status(200).json(issues);
+
   } catch (error) {
-    console.error("Get issues error:", error);
+    console.error(
+      "Get issues error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Failed to fetch issues",
+      message:
+        "Failed to fetch issues",
       error: error.message,
     });
   }
 };
-
 
 // =====================================================
 // SAVE AI-GENERATED ISSUE
 // POST /api/issues/save
 // =====================================================
 
-exports.saveIssue = async (req, res) => {
+exports.saveIssue = async (
+  req,
+  res
+) => {
   try {
     const {
       title,
@@ -186,125 +397,223 @@ exports.saveIssue = async (req, res) => {
       project,
     } = req.body;
 
-    if (!description || !description.trim()) {
+    // =================================================
+    // VALIDATE DESCRIPTION
+    // =================================================
+
+    if (
+      !description ||
+      !description.trim()
+    ) {
       return res.status(400).json({
-        message: "Description is required",
+        message:
+          "Description is required",
       });
     }
+
+    // =================================================
+    // VALIDATE PRIORITY
+    // =================================================
 
     if (
       priority &&
-      !VALID_PRIORITIES.includes(priority)
+      !VALID_PRIORITIES.includes(
+        priority
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid priority",
+        message:
+          "Invalid priority",
       });
     }
+
+    // =================================================
+    // VALIDATE SEVERITY
+    // =================================================
 
     if (
       severity &&
-      !VALID_SEVERITIES.includes(severity)
+      !VALID_SEVERITIES.includes(
+        severity
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid severity",
+        message:
+          "Invalid severity",
       });
     }
+
+    // =================================================
+    // VALIDATE CATEGORY
+    // =================================================
 
     if (
       category &&
-      !VALID_CATEGORIES.includes(category)
+      !VALID_CATEGORIES.includes(
+        category
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid category",
+        message:
+          "Invalid category",
       });
     }
 
-    // Create saved AI issue
-    const issue = await Issue.create({
-      title: title?.trim(),
-      description: description.trim(),
-      report,
+    // =================================================
+    // GENERATE EMBEDDING + CHECK DUPLICATES
+    // =================================================
 
-      status: "Open",
-      priority: priority || "Medium",
-      severity: severity || "Medium",
-      category: category || "Other",
-
-      project: project || undefined,
-
-      reportedBy: req.user.id,
+    const {
+      embedding,
+      similarIssues,
+    } = await findSimilarIssues({
+      description:
+        description.trim(),
+      project,
     });
 
+    // =================================================
+    // DUPLICATE FOUND
+    // =================================================
 
-    // =====================================================
-// GET SAVED ISSUES
-// GET /api/issues/saved
-// =====================================================
+    if (similarIssues.length > 0) {
+      return res.status(409).json({
+        message:
+          "A similar issue already exists",
+        duplicate: true,
+        similarIssues,
+      });
+    }
 
-exports.getSavedIssues = async (req, res) => {
-  try {
-    const issues = await Issue.find({
-      reportedBy: req.user.id,
-    })
-      .populate("reportedBy", "name email")
-      .populate("project", "projectName")
-      .populate("sprint", "name")
-      .sort({ createdAt: -1 });
+    // =================================================
+    // CREATE SAVED AI ISSUE
+    // =================================================
 
-    res.status(200).json(issues);
-  } catch (error) {
-    console.error("Get saved issues error:", error);
+    const issue =
+      await Issue.create({
+        title: title?.trim(),
 
-    res.status(500).json({
-      message: "Failed to fetch saved issues",
-      error: error.message,
-    });
-  }
-};
+        description:
+          description.trim(),
+
+        report,
+
+        status: "Open",
+
+        priority:
+          priority || "Medium",
+
+        severity:
+          severity || "Medium",
+
+        category:
+          category || "Other",
+
+        project:
+          project || undefined,
+
+        reportedBy:
+          req.user.id,
+
+        // Store embedding
+        embedding,
+      });
 
     // =================================================
     // RECORD AI ISSUE CREATED
     // =================================================
 
     await Activity.create({
-  issue: issue._id,
+      issue: issue._id,
 
-  // Keep a permanent copy of the title
-  issueTitle:
-    issue.title ||
-    issue.description ||
-    "Untitled Issue",
+      issueTitle:
+        issue.title ||
+        issue.description ||
+        "Untitled Issue",
 
-  user: req.user.id,
+      user: req.user.id,
 
-  action: "Issue created",
+      action:
+        "Issue created",
 
-  details: `Saved AI-generated issue "${
-    issue.title ||
-    issue.description ||
-    "Untitled Issue"
-  }"`,
-});
+      details: `Saved AI-generated issue "${
+        issue.title ||
+        issue.description ||
+        "Untitled Issue"
+      }"`,
+    });
 
     res.status(201).json(issue);
+
   } catch (error) {
-    console.error("Save issue error:", error);
+    console.error(
+      "Save issue error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Failed to save issue",
+      message:
+        "Failed to create issue",
       error: error.message,
     });
   }
 };
 
+// =====================================================
+// GET SAVED ISSUES
+// GET /api/issues/saved
+// =====================================================
 
+exports.getSavedIssues = async (
+  req,
+  res
+) => {
+  try {
+    const issues =
+      await Issue.find({
+        reportedBy: req.user.id,
+      })
+        .populate(
+          "reportedBy",
+          "name email"
+        )
+        .populate(
+          "project",
+          "projectName"
+        )
+        .populate(
+          "sprint",
+          "name"
+        )
+        .sort({
+          createdAt: -1,
+        });
+
+    res.status(200).json(issues);
+
+  } catch (error) {
+    console.error(
+      "Get saved issues error:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        "Failed to fetch saved issues",
+      error: error.message,
+    });
+  }
+};
 
 // =====================================================
 // UPDATE ISSUE
 // PUT /api/issues/:id
 // =====================================================
 
-exports.updateIssue = async (req, res) => {
+exports.updateIssue = async (
+  req,
+  res
+) => {
   try {
     const {
       title,
@@ -321,47 +630,63 @@ exports.updateIssue = async (req, res) => {
     // VALIDATION
     // =================================================
 
-    if (status && !VALID_STATUSES.includes(status)) {
+    if (
+      status &&
+      !VALID_STATUSES.includes(
+        status
+      )
+    ) {
       return res.status(400).json({
-        message: "Invalid status",
+        message:
+          "Invalid status",
       });
     }
 
     if (
       priority &&
-      !VALID_PRIORITIES.includes(priority)
+      !VALID_PRIORITIES.includes(
+        priority
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid priority",
+        message:
+          "Invalid priority",
       });
     }
 
     if (
       severity &&
-      !VALID_SEVERITIES.includes(severity)
+      !VALID_SEVERITIES.includes(
+        severity
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid severity",
+        message:
+          "Invalid severity",
       });
     }
 
     if (
       category &&
-      !VALID_CATEGORIES.includes(category)
+      !VALID_CATEGORIES.includes(
+        category
+      )
     ) {
       return res.status(400).json({
-        message: "Invalid category",
+        message:
+          "Invalid category",
       });
     }
 
     // =================================================
-    // FIND ISSUE BEFORE UPDATE
+    // FIND EXISTING ISSUE
     // =================================================
 
-    const existingIssue = await Issue.findOne({
-      _id: req.params.id,
-      reportedBy: req.user.id,
-    });
+    const existingIssue =
+      await Issue.findOne({
+        _id: req.params.id,
+        reportedBy: req.user.id,
+      });
 
     if (!existingIssue) {
       return res.status(404).json({
@@ -370,40 +695,60 @@ exports.updateIssue = async (req, res) => {
       });
     }
 
+    // =================================================
+    // STATUS WORKFLOW VALIDATION
+    // =================================================
+
+    if (status !== undefined) {
+      const allowedTransitions = {
+        Open: [
+          "Open",
+          "In Progress",
+        ],
+
+        "In Progress": [
+          "In Progress",
+          "In Review",
+        ],
+
+        "In Review": [
+          "In Review",
+          "Resolved",
+        ],
+
+        Resolved: [
+          "Resolved",
+        ],
+      };
+
+      const currentStatus =
+        existingIssue.status;
+
+      if (
+        !allowedTransitions[
+          currentStatus
+        ]?.includes(status)
+      ) {
+        return res.status(400).json({
+          message: `Invalid status transition: ${currentStatus} → ${status}`,
+        });
+      }
+    }
 
     // =================================================
-// STATUS WORKFLOW VALIDATION
-// =================================================
-
-if (status !== undefined) {
-  const allowedTransitions = {
-    Open: ["Open", "In Progress"],
-    "In Progress": ["In Progress", "In Review"],
-    "In Review": ["In Review", "Resolved"],
-    Resolved: ["Resolved"],
-  };
-
-  const currentStatus = existingIssue.status;
-
-  if (!allowedTransitions[currentStatus]?.includes(status)) {
-    return res.status(400).json({
-      message: `Invalid status transition: ${currentStatus} → ${status}`,
-    });
-  }
-}
-
-
- // =================================================
     // BUILD UPDATE DATA
     // =================================================
 
     const updateData = {};
 
     if (title !== undefined) {
-      updateData.title = title.trim();
+      updateData.title =
+        title.trim();
     }
 
-    if (description !== undefined) {
+    if (
+      description !== undefined
+    ) {
       updateData.description =
         description.trim();
     }
@@ -413,45 +758,81 @@ if (status !== undefined) {
     }
 
     if (priority !== undefined) {
-      updateData.priority = priority;
+      updateData.priority =
+        priority;
     }
 
     if (severity !== undefined) {
-      updateData.severity = severity;
+      updateData.severity =
+        severity;
     }
 
     if (category !== undefined) {
-      updateData.category = category;
+      updateData.category =
+        category;
     }
 
     if (project !== undefined) {
-      updateData.project = project || null;
+      updateData.project =
+        project || null;
     }
 
     if (sprint !== undefined) {
-      updateData.sprint = sprint;
+      updateData.sprint =
+        sprint;
+    }
+
+    // =================================================
+    // REGENERATE EMBEDDING IF DESCRIPTION CHANGED
+    // =================================================
+
+    if (
+      description !== undefined &&
+      description.trim() !==
+        existingIssue.description
+    ) {
+      const newEmbedding =
+        await generateEmbedding(
+          description.trim()
+        );
+
+      updateData.embedding =
+        newEmbedding;
     }
 
     // =================================================
     // UPDATE ISSUE
     // =================================================
 
-    const issue = await Issue.findOneAndUpdate(
-      {
-        _id: req.params.id,
-        reportedBy: req.user.id,
-      },
-      {
-        $set: updateData,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    )
-      .populate("reportedBy", "name email")
-      .populate("project", "projectName")
-      .populate("sprint", "name");
+    const issue =
+      await Issue.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          reportedBy:
+            req.user.id,
+        },
+
+        {
+          $set: updateData,
+        },
+
+        {
+          new: true,
+          runValidators: true,
+        }
+      )
+        .populate(
+          "reportedBy",
+          "name email"
+        )
+        .populate(
+          "project",
+          "projectName"
+        )
+        .populate(
+          "sprint",
+          "name"
+        );
 
     if (!issue) {
       return res.status(404).json({
@@ -466,10 +847,7 @@ if (status !== undefined) {
 
     const activities = [];
 
-    // -------------------------
     // STATUS CHANGED
-    // -------------------------
-
     if (
       status !== undefined &&
       status !== existingIssue.status
@@ -477,85 +855,77 @@ if (status !== undefined) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Status changed",
+        action:
+          "Status changed",
         details:
           `${existingIssue.status} → ${status}`,
       });
     }
 
-    // -------------------------
     // PRIORITY CHANGED
-    // -------------------------
-
     if (
       priority !== undefined &&
-      priority !== existingIssue.priority
+      priority !==
+        existingIssue.priority
     ) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Priority changed",
+        action:
+          "Priority changed",
         details:
           `${existingIssue.priority} → ${priority}`,
       });
     }
 
-    // -------------------------
     // SEVERITY CHANGED
-    // -------------------------
-
     if (
       severity !== undefined &&
-      severity !== existingIssue.severity
+      severity !==
+        existingIssue.severity
     ) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Severity changed",
+        action:
+          "Severity changed",
         details:
           `${existingIssue.severity} → ${severity}`,
       });
     }
 
-    // -------------------------
     // CATEGORY CHANGED
-    // -------------------------
-
     if (
       category !== undefined &&
-      category !== existingIssue.category
+      category !==
+        existingIssue.category
     ) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Category changed",
+        action:
+          "Category changed",
         details:
           `${existingIssue.category} → ${category}`,
       });
     }
 
-    // -------------------------
     // TITLE CHANGED
-    // -------------------------
-
     if (
       title !== undefined &&
-      title.trim() !== existingIssue.title
+      title.trim() !==
+        existingIssue.title
     ) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Title changed",
-        details: `"${
-          existingIssue.title || "Untitled Issue"
-        }" → "${title.trim()}"`,
+        action:
+          "Title changed",
+        details: `"${existingIssue.title || "Untitled Issue"}" → "${title.trim()}"`,
       });
     }
 
-    // -------------------------
     // DESCRIPTION CHANGED
-    // -------------------------
-
     if (
       description !== undefined &&
       description.trim() !==
@@ -564,71 +934,88 @@ if (status !== undefined) {
       activities.push({
         issue: issue._id,
         user: req.user.id,
-        action: "Description updated",
+        action:
+          "Description updated",
         details:
           "Issue description was updated",
       });
     }
 
-    // -------------------------
     // PROJECT CHANGED
-    // -------------------------
-
     if (project !== undefined) {
       const oldProject =
         existingIssue.project?.toString() ||
         null;
 
-      const newProject = project || null;
+      const newProject =
+        project || null;
 
-      if (oldProject !== newProject) {
+      if (
+        oldProject !==
+        newProject
+      ) {
         activities.push({
           issue: issue._id,
           user: req.user.id,
-          action: "Project changed",
+          action:
+            "Project changed",
           details:
             "Issue project was changed",
         });
       }
     }
 
-    // -------------------------
-// SPRINT CHANGED
-// -------------------------
+    // SPRINT CHANGED
+    if (sprint !== undefined) {
+      const oldSprint =
+        existingIssue.sprint?.toString() ||
+        null;
 
-if (sprint !== undefined) {
-  const oldSprint =
-    existingIssue.sprint?.toString() || null;
+      const newSprint =
+        sprint || null;
 
-  const newSprint = sprint || null;
-
-  if (oldSprint !== newSprint) {
-    activities.push({
-      issue: issue._id,
-      user: req.user.id,
-      action: "Sprint changed",
-      details: "Issue sprint was changed",
-    });
-  }
-}
+      if (
+        oldSprint !==
+        newSprint
+      ) {
+        activities.push({
+          issue: issue._id,
+          user: req.user.id,
+          action:
+            "Sprint changed",
+          details:
+            "Issue sprint was changed",
+        });
+      }
+    }
 
     // =================================================
     // SAVE ACTIVITIES
     // =================================================
 
-    if (activities.length > 0) {
-      await Activity.insertMany(activities);
+    if (
+      activities.length > 0
+    ) {
+      await Activity.insertMany(
+        activities
+      );
     }
 
     res.status(200).json({
-      message: "Issue updated successfully",
+      message:
+        "Issue updated successfully",
       issue,
     });
+
   } catch (error) {
-    console.error("Update issue error:", error);
+    console.error(
+      "Update issue error:",
+      error
+    );
 
     res.status(500).json({
-      message: "Failed to update issue",
+      message:
+        "Failed to update issue",
       error: error.message,
     });
   }
@@ -639,16 +1026,16 @@ if (sprint !== undefined) {
 // DELETE /api/issues/:id
 // =====================================================
 
-exports.deleteIssue = async (req, res) => {
+exports.deleteIssue = async (req,res) => {
   try {
-    // ==========================================
-    // 1. FIND ISSUE
-    // ==========================================
+    // =================================================
+    // FIND ISSUE
+    // =================================================
 
-    const issue = await Issue.findOne({
-      _id: req.params.id,
-      reportedBy: req.user.id,
-    });
+    const issue =await Issue.findOne({
+        _id: req.params.id,
+        reportedBy: req.user.id,
+      });
 
     if (!issue) {
       return res.status(404).json({
@@ -657,39 +1044,46 @@ exports.deleteIssue = async (req, res) => {
       });
     }
 
-    // Save title before deleting the issue
+    // =================================================
+    // SAVE TITLE BEFORE DELETE
+    // =================================================
+
     const issueTitle =
       issue.title ||
       issue.description ||
       "Untitled Issue";
 
-    // ==========================================
-    // 2. CREATE DELETION ACTIVITY
-    // ==========================================
+    // =================================================
+    // CREATE DELETION ACTIVITY
+    // =================================================
 
     await Activity.create({
-      issue: null,
+      issue: issue._id,
       issueTitle: issueTitle,
       user: req.user.id,
-      action: "Issue deleted",
-      details: `Deleted issue "${issueTitle}"`,
+      action:
+        "Issue deleted",
+      details:
+        `Deleted issue "${issueTitle}"`,
     });
 
-    // ==========================================
-    // 3. DELETE ISSUE
-    // ==========================================
+    // =================================================
+    // DELETE ISSUE
+    // =================================================
 
     await Issue.deleteOne({
       _id: issue._id,
     });
 
-    // ==========================================
-    // 4. SEND RESPONSE
-    // ==========================================
+    // =================================================
+    // RESPONSE
+    // =================================================
 
-    res.status(200).json({
-      message: "Issue deleted successfully",
+    return res.status(200).json({
+      message:
+        "Issue deleted successfully",
     });
+
   } catch (error) {
     console.error(
       "Delete issue error:",
@@ -697,37 +1091,9 @@ exports.deleteIssue = async (req, res) => {
     );
 
     res.status(500).json({
-      message: "Failed to delete issue",
+      message:
+        "Failed to delete issue",
       error: error.message,
     });
   }
 };
-
-// =====================================================
-// GET SAVED ISSUES
-// GET /api/issues/saved
-// =====================================================
-
-exports.getSavedIssues = async (req, res) => {
-  try {
-    const issues = await Issue.find({
-      reportedBy: req.user.id,
-    })
-      .populate("reportedBy", "name email")
-      .populate("project", "projectName")
-      .populate("sprint", "name")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json(issues);
-  } catch (error) {
-    console.error("Get saved issues error:", error);
-
-    res.status(500).json({
-      message: "Failed to fetch saved issues",
-      error: error.message,
-    });
-  }
-};
-
-  
-    

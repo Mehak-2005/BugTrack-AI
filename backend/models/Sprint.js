@@ -28,6 +28,18 @@ const sprintSchema = new mongoose.Schema(
       ref: "Project",
       required: true,
     },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["planned", "active", "completed"],
+      default: "planned",
+    },
   },
   {
     timestamps: true,

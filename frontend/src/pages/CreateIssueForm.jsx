@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+import { analyzeBug } from "../services/issueService";
+
 export default function CreateIssueForm() {
   const navigate = useNavigate();
 
@@ -17,7 +19,7 @@ export default function CreateIssueForm() {
 
   const [priority, setPriority] = useState("Medium");
 
-  // Milestone 2
+  // Milestone 2 - AI Triage
   const [severity, setSeverity] = useState("Medium");
   const [category, setCategory] = useState("Other");
 
@@ -25,6 +27,8 @@ export default function CreateIssueForm() {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [triaging, setTriaging] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -75,7 +79,7 @@ export default function CreateIssueForm() {
   }, [token, navigate]);
 
   // ==========================================
-  // CLEAR OLD AI REPORT WHEN FORM CHANGES
+  // CLEAR OLD AI REPORT
   // ==========================================
 
   const clearReport = () => {
@@ -85,7 +89,7 @@ export default function CreateIssueForm() {
   };
 
   // ==========================================
-  // GENERATE AI REPORT
+  // GENERATE AI REPORT + AI TRIAGE
   // ==========================================
 
   const generateReport = async () => {
@@ -123,6 +127,51 @@ export default function CreateIssueForm() {
 
     try {
       setLoading(true);
+      setTriaging(true);
+
+      // ========================================
+      // STEP 1: AI TRIAGE
+      // ========================================
+
+      const triageResult = await analyzeBug(
+        description.trim()
+      );
+
+      console.log(
+        "AI Triage Result:",
+        triageResult
+      );
+
+      const detectedCategory =
+        triageResult?.analysis?.category ||
+        "Other";
+
+      const detectedSeverity =
+        triageResult?.analysis?.severity ||
+        "Medium";
+
+      // ========================================
+      // STEP 2: UPDATE FORM VALUES
+      // ========================================
+
+      setCategory(detectedCategory);
+      setSeverity(detectedSeverity);
+
+      console.log(
+        "Detected Category:",
+        detectedCategory
+      );
+
+      console.log(
+        "Detected Severity:",
+        detectedSeverity
+      );
+
+      setTriaging(false);
+
+      // ========================================
+      // STEP 3: GENERATE FULL AI BUG REPORT
+      // ========================================
 
       const res = await axios.post(
         "http://localhost:5000/api/ai/generate-bug-report",
@@ -131,8 +180,10 @@ export default function CreateIssueForm() {
           description: description.trim(),
 
           priority,
-          severity,
-          category,
+
+          // Use AI detected values directly
+          severity: detectedSeverity,
+          category: detectedCategory,
 
           projectName:
             selectedProject.projectName,
@@ -151,6 +202,10 @@ export default function CreateIssueForm() {
       }
 
       setReport(res.data.report);
+
+      alert(
+        `AI Triage Complete!\n\nCategory: ${detectedCategory}\nSeverity: ${detectedSeverity}`
+      );
     } catch (err) {
       console.error(
         "AI report error:",
@@ -171,10 +226,12 @@ export default function CreateIssueForm() {
       alert(
         err.response?.data?.error ||
           err.response?.data?.message ||
+          err.message ||
           "Failed to generate AI report"
       );
     } finally {
       setLoading(false);
+      setTriaging(false);
     }
   };
 
@@ -245,7 +302,7 @@ export default function CreateIssueForm() {
 
       setReport("");
 
-      // Go to Kanban board
+      // Go to issues page
       navigate("/issues");
     } catch (err) {
       console.error(
@@ -538,7 +595,7 @@ export default function CreateIssueForm() {
             </option>
           </select>
 
-          {/* INFORMATION BOX */}
+          {/* AI TRIAGE INFORMATION */}
 
           <div
             style={{
@@ -552,13 +609,79 @@ export default function CreateIssueForm() {
               lineHeight: "1.6",
             }}
           >
-            <strong>Priority</strong> tells the
-            team how urgently the issue should
-            be handled, while{" "}
-            <strong>Severity</strong> describes
-            how strongly the bug affects the
-            application.
+            <strong>AI Triage:</strong>{" "}
+            When you generate the report, Gemini
+            will automatically analyze the bug
+            description and suggest the appropriate
+            category and severity.
           </div>
+
+          {/* AI DETECTED VALUES */}
+
+          {(triaging || report) && (
+            <div
+              style={{
+                background: "#fdf5f3",
+                border: "1px solid #eadbd6",
+                borderRadius: "10px",
+                padding: "15px",
+                marginBottom: "22px",
+              }}
+            >
+              <strong
+                style={{
+                  color: "#702f43",
+                }}
+              >
+                AI Triage Result
+              </strong>
+
+              {triaging ? (
+                <p
+                  style={{
+                    marginBottom: 0,
+                    color: "#75676a",
+                  }}
+                >
+                  Analyzing bug category and
+                  severity...
+                </p>
+              ) : (
+                <div
+                  style={{
+                    marginTop: "10px",
+                    display: "flex",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      padding: "7px 12px",
+                      borderRadius: "20px",
+                      background: "#eadbd6",
+                      color: "#702f43",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Category: {category}
+                  </span>
+
+                  <span
+                    style={{
+                      padding: "7px 12px",
+                      borderRadius: "20px",
+                      background: "#eadbd6",
+                      color: "#702f43",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Severity: {severity}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* GENERATE REPORT */}
 
@@ -596,7 +719,9 @@ export default function CreateIssueForm() {
             }}
           >
             {loading
-              ? "Generating AI Report..."
+              ? triaging
+                ? "Analyzing Bug..."
+                : "Generating AI Report..."
               : "✦ Generate AI Report"}
           </button>
 

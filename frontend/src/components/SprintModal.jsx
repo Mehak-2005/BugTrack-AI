@@ -8,9 +8,22 @@ export default function SprintModal({
   setForm,
   projects,
   createSprint,
+  updateSprint,
   creating,
+  editing,
 }) {
-    console.log("Projects received in Modal:", projects);
+  // ========================================
+  // HANDLE FORM SUBMISSION
+  // ========================================
+
+  const handleSubmit = () => {
+    if (editing) {
+      updateSprint();
+    } else {
+      createSprint();
+    }
+  };
+
   return (
     <Modal
       open={open}
@@ -18,6 +31,10 @@ export default function SprintModal({
       title=""
       width="700px"
     >
+      {/* ========================================
+          HEADER
+      ======================================== */}
+
       <div style={{ marginBottom: "25px" }}>
         <h2
           style={{
@@ -26,7 +43,7 @@ export default function SprintModal({
             fontSize: "30px",
           }}
         >
-           Create Sprint
+          {editing ? "Edit Sprint" : "Create Sprint"}
         </h2>
 
         <p
@@ -35,21 +52,18 @@ export default function SprintModal({
             color: "#777",
           }}
         >
-          Create a new sprint for your project.
+          {editing
+            ? "Update the details of your sprint."
+            : "Create a new sprint for your project."}
         </p>
       </div>
 
-      {/* Sprint Name */}
+      {/* ========================================
+          SPRINT NAME
+      ======================================== */}
 
       <div style={{ marginBottom: "18px" }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "8px",
-            fontWeight: "600",
-            color: "#702f43",
-          }}
-        >
+        <label style={labelStyle}>
           Sprint Name
         </label>
 
@@ -67,17 +81,12 @@ export default function SprintModal({
         />
       </div>
 
-      {/* Description */}
+      {/* ========================================
+          DESCRIPTION
+      ======================================== */}
 
       <div style={{ marginBottom: "18px" }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "8px",
-            fontWeight: "600",
-            color: "#702f43",
-          }}
-        >
+        <label style={labelStyle}>
           Description
         </label>
 
@@ -98,7 +107,9 @@ export default function SprintModal({
         />
       </div>
 
-      {/* Dates */}
+      {/* ========================================
+          DATES
+      ======================================== */}
 
       <div
         style={{
@@ -107,15 +118,10 @@ export default function SprintModal({
           marginBottom: "18px",
         }}
       >
+        {/* START DATE */}
+
         <div style={{ flex: 1 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: "600",
-              color: "#702f43",
-            }}
-          >
+          <label style={labelStyle}>
             Start Date
           </label>
 
@@ -132,15 +138,10 @@ export default function SprintModal({
           />
         </div>
 
+        {/* END DATE */}
+
         <div style={{ flex: 1 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: "8px",
-              fontWeight: "600",
-              color: "#702f43",
-            }}
-          >
+          <label style={labelStyle}>
             End Date
           </label>
 
@@ -158,17 +159,12 @@ export default function SprintModal({
         </div>
       </div>
 
-      {/* Project */}
+      {/* ========================================
+          PROJECT
+      ======================================== */}
 
       <div style={{ marginBottom: "25px" }}>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "8px",
-            fontWeight: "600",
-            color: "#702f43",
-          }}
-        >
+        <label style={labelStyle}>
           Project
         </label>
 
@@ -180,8 +176,11 @@ export default function SprintModal({
               project: e.target.value,
             })
           }
+          style={inputStyle}
         >
-          <option value="">Select Project</option>
+          <option value="">
+            Select Project
+          </option>
 
           {projects.map((project) => (
             <option
@@ -194,7 +193,9 @@ export default function SprintModal({
         </select>
       </div>
 
-      {/* Buttons */}
+      {/* ========================================
+          BUTTONS
+      ======================================== */}
 
       <div
         style={{
@@ -203,21 +204,31 @@ export default function SprintModal({
           gap: "12px",
         }}
       >
+        {/* CANCEL */}
+
         <button
+          type="button"
           onClick={onClose}
+          disabled={creating}
           style={{
             padding: "11px 22px",
             borderRadius: "10px",
             border: "1px solid #ddd",
             background: "#fff",
-            cursor: "pointer",
+            cursor: creating
+              ? "not-allowed"
+              : "pointer",
+            color: "#555",
           }}
         >
           Cancel
         </button>
 
+        {/* CREATE / UPDATE */}
+
         <button
-          onClick={createSprint}
+          type="button"
+          onClick={handleSubmit}
           disabled={creating}
           style={{
             padding: "11px 24px",
@@ -227,15 +238,38 @@ export default function SprintModal({
               "linear-gradient(135deg,#702f43,#91465d)",
             color: "#fff",
             fontWeight: "700",
-            cursor: "pointer",
+            cursor: creating
+              ? "not-allowed"
+              : "pointer",
           }}
         >
-          {creating ? "Creating..." : "Create Sprint"}
+          {creating
+            ? editing
+              ? "Updating..."
+              : "Creating..."
+            : editing
+            ? "Update Sprint"
+            : "Create Sprint"}
         </button>
       </div>
     </Modal>
   );
 }
+
+// ========================================
+// LABEL STYLE
+// ========================================
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "8px",
+  fontWeight: "600",
+  color: "#702f43",
+};
+
+// ========================================
+// INPUT STYLE
+// ========================================
 
 const inputStyle = {
   width: "100%",
@@ -244,4 +278,5 @@ const inputStyle = {
   border: "1px solid #ddd",
   boxSizing: "border-box",
   fontSize: "14px",
+  background: "#fff",
 };

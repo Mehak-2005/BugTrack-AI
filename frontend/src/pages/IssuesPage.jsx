@@ -11,6 +11,10 @@ import CommentsModal from "../components/CommentsModal";
 import AttachmentModal from "../components/AttachmentModal";
 import AIReportModal from "../components/AIReportModal";
 import { getSprints } from "../services/sprintService";
+import {
+  getIssues,
+  updateIssue,
+} from "../services/issueService";
 
 export default function IssuesPage() {
   const navigate = useNavigate();
@@ -434,47 +438,64 @@ const deleteComment = async (
   };
 
   // =====================================================
-  // DELETE ISSUE
-  // =====================================================
+// DELETE ISSUE
+// =====================================================
 
-  const deleteIssue = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this issue?"
+const deleteIssue = async (id) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this issue?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    setUpdatingId(id);
+
+    const response = await axios.delete(
+      `http://localhost:5000/api/issues/${id}`,
+      getAuthConfig()
     );
 
-    if (!confirmed) {
-      return;
-    }
+    console.log(
+      "DELETE RESPONSE:",
+      response.data
+    );
 
-    try {
-      setUpdatingId(id);
+    // Remove deleted issue from the UI
+    setIssues((previousIssues) =>
+      previousIssues.filter(
+        (issue) => issue._id !== id
+      )
+    );
 
-      await axios.delete(
-        `http://localhost:5000/api/issues/${id}`,
-        getAuthConfig()
-      );
+  } catch (error) {
+    console.error(
+      "Delete issue error:",
+      error
+    );
 
-      setIssues((previousIssues) =>
-        previousIssues.filter(
-          (issue) => issue._id !== id
-        )
-      );
+    console.error(
+      "Status:",
+      error.response?.status
+    );
 
-      if (expandedReport === id) {
-        setExpandedReport(null);
-      }
-    } catch (error) {
-      console.error("Delete issue error:", error);
+    console.error(
+      "Response:",
+      error.response?.data
+    );
 
-      alert(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Failed to delete issue"
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to delete issue"
+    );
+
+  } finally {
+    setUpdatingId(null);
+  }
+};
 // =====================================================
 // ATTACHMENTS
 // =====================================================
@@ -674,6 +695,9 @@ const deleteAttachment = async (issueId, attachmentId) => {
   // =====================================================
   // STATISTICS
   // =====================================================
+
+  console.log("CURRENT ISSUES:", issues);
+console.log("TOTAL ISSUES:", issues.length);
 
   const totalIssues = issues.length;
 
@@ -1209,7 +1233,7 @@ const availableStatusOptions =
 
 <button
   type="button"
-  onClick={async () => {
+  onClick={async (e) => {
   setAttachmentModalIssue(issue);
   await fetchAttachments(issue._id);
 }}
@@ -1245,9 +1269,11 @@ const availableStatusOptions =
   <button
     type="button"
     disabled={isUpdating}
-    onClick={() =>
-      deleteIssue(issue._id)
-    }
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteIssue(issue._id);
+    }}
     style={{
       gridColumn: "1 / -1",
       width: "100%",

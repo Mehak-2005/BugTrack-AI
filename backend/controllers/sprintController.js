@@ -6,15 +6,19 @@ const Sprint = require("../models/Sprint");
 
 exports.getSprints = async (req, res) => {
   try {
-    const sprints = await Sprint.find()
+    const sprints = await Sprint.find({
+      createdBy: req.user.id,
+    })
       .populate("project", "projectName")
       .sort({ createdAt: -1 });
 
     res.status(200).json(sprints);
   } catch (err) {
-    console.error(err);
+    console.error("Get sprints error:", err);
+
     res.status(500).json({
       message: "Failed to fetch sprints",
+      error: err.message,
     });
   }
 };
@@ -25,13 +29,22 @@ exports.getSprints = async (req, res) => {
 
 exports.createSprint = async (req, res) => {
   try {
-    const sprint = await Sprint.create(req.body);
+    const sprint = await Sprint.create({
+      ...req.body,
+      createdBy: req.user.id,
+    });
 
-    res.status(201).json(sprint);
+    const populatedSprint = await Sprint.findById(sprint._id)
+      .populate("project", "projectName")
+      .populate("createdBy", "name email");
+
+    res.status(201).json(populatedSprint);
   } catch (err) {
-    console.error(err);
+    console.error("Create sprint error:", err);
+
     res.status(500).json({
       message: "Failed to create sprint",
+      error: err.message,
     });
   }
 };
@@ -42,17 +55,47 @@ exports.createSprint = async (req, res) => {
 
 exports.updateSprint = async (req, res) => {
   try {
-    const sprint = await Sprint.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
+    const {
+      name,
+      description,
+      startDate,
+      endDate,
+      project,
+    } = req.body;
 
-    res.json(sprint);
+    const sprint = await Sprint.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        createdBy: req.user.id,
+      },
+      {
+        name,
+        description,
+        startDate,
+        endDate,
+        project,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate("project", "projectName")
+      .populate("createdBy", "name email");
+
+    if (!sprint) {
+      return res.status(404).json({
+        message: "Sprint not found",
+      });
+    }
+
+    res.status(200).json(sprint);
   } catch (err) {
-    console.error(err);
+    console.error("Update sprint error:", err);
+
     res.status(500).json({
       message: "Failed to update sprint",
+      error: err.message,
     });
   }
 };
@@ -63,15 +106,26 @@ exports.updateSprint = async (req, res) => {
 
 exports.deleteSprint = async (req, res) => {
   try {
-    await Sprint.findByIdAndDelete(req.params.id);
+    const sprint = await Sprint.findOneAndDelete({
+      _id: req.params.id,
+      createdBy: req.user.id,
+    });
 
-    res.json({
+    if (!sprint) {
+      return res.status(404).json({
+        message: "Sprint not found",
+      });
+    }
+
+    res.status(200).json({
       message: "Sprint deleted successfully",
     });
   } catch (err) {
-    console.error(err);
+    console.error("Delete sprint error:", err);
+
     res.status(500).json({
       message: "Failed to delete sprint",
+      error: err.message,
     });
   }
 };
