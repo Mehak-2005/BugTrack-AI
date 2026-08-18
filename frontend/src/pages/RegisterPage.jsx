@@ -94,16 +94,16 @@ export default function RegisterPage() {
 
           <div className="auth-brand">
             <div className="auth-logo">
-              B
+              D
             </div>
 
-            <span>BugTrack AI</span>
+            <span>DefectIQ </span>
           </div>
 
           <div className="auth-hero-content">
 
             <span className="auth-badge">
-              AI-powered issue management
+              AI-powered defect resolution
             </span>
 
             <h1>
@@ -113,9 +113,8 @@ export default function RegisterPage() {
             </h1>
 
             <p>
-              Create your workspace and start
-              managing projects, tracking bugs and
-              generating intelligent bug reports with AI.
+              Create your workspace and start managing projects, tracking
+defects and generating intelligent resolution insights with AI.
             </p>
 
             <div className="auth-features">
@@ -132,7 +131,7 @@ export default function RegisterPage() {
           <div className="auth-card-header">
 
             <span className="mobile-logo">
-              B
+              D
             </span>
 
             <h2>Create account</h2>

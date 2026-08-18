@@ -63,12 +63,12 @@ export default function Layout() {
         <div className="brand">
 
           <div className="brand-icon">
-            B
+            D
           </div>
 
           <div>
-            <h2>BugTrack AI</h2>
-            <span>Bug Management</span>
+            <h2>DefectIQ</h2>
+            <span>Intelligent Defect Managementt</span>
           </div>
 
         </div>
@@ -92,6 +92,13 @@ export default function Layout() {
             <span>◫</span>
             Projects
           </NavLink>
+
+          {/* TEAM MEMBERS */}
+
+<NavLink to="/team">
+  <span>♟</span>
+  Team Members
+</NavLink>
 
           {/* ISSUES */}
 
@@ -147,7 +154,7 @@ export default function Layout() {
         <header className="topbar">
 
           <div>
-            <h3>BugTrack AI</h3>
+            <h3>DefectIQ </h3>
           </div>
 
           {/* LOGGED-IN USER */}

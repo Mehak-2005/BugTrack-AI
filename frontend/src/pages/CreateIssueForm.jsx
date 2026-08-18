@@ -22,13 +22,22 @@ export default function CreateIssueForm() {
   // Milestone 2 - AI Triage
   const [severity, setSeverity] = useState("Medium");
   const [category, setCategory] = useState("Other");
-
+// AI Classification
+const [defectType, setDefectType] = useState("Other");
+const [affectedModule, setAffectedModule] = useState("");
   const [report, setReport] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const [triaging, setTriaging] = useState(false);
+
+  // ==========================================
+  // SIMILAR DEFECT DETECTION
+  // ==========================================
+
+  const [similarIssues, setSimilarIssues] = useState([]);
+  const [showSimilarPopup, setShowSimilarPopup] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -143,19 +152,34 @@ export default function CreateIssueForm() {
       );
 
       const detectedCategory =
-        triageResult?.analysis?.category ||
-        "Other";
+  triageResult?.analysis?.category ||
+  "Other";
 
-      const detectedSeverity =
-        triageResult?.analysis?.severity ||
-        "Medium";
+const detectedSeverity =
+  triageResult?.analysis?.severity ||
+  "Medium";
+
+const detectedPriority =
+  triageResult?.analysis?.priority ||
+  "Medium";
+
+const detectedDefectType =
+  triageResult?.analysis?.defectType ||
+  "Other";
+
+const detectedModule =
+  triageResult?.analysis?.affectedModule ||
+  "";
 
       // ========================================
       // STEP 2: UPDATE FORM VALUES
       // ========================================
 
       setCategory(detectedCategory);
-      setSeverity(detectedSeverity);
+setSeverity(detectedSeverity);
+setPriority(detectedPriority);
+setDefectType(detectedDefectType);
+setAffectedModule(detectedModule);
 
       console.log(
         "Detected Category:",
@@ -178,15 +202,15 @@ export default function CreateIssueForm() {
         {
           title: title.trim(),
           description: description.trim(),
+          priority: detectedPriority,
+severity: detectedSeverity,
+category: detectedCategory,
 
-          priority,
+defectType: detectedDefectType,
+affectedModule: detectedModule,
 
-          // Use AI detected values directly
-          severity: detectedSeverity,
-          category: detectedCategory,
-
-          projectName:
-            selectedProject.projectName,
+projectName:
+  selectedProject.projectName,
         },
         {
           headers: {
@@ -204,8 +228,13 @@ export default function CreateIssueForm() {
       setReport(res.data.report);
 
       alert(
-        `AI Triage Complete!\n\nCategory: ${detectedCategory}\nSeverity: ${detectedSeverity}`
-      );
+  `AI Triage Complete!\n\n` +
+  `Category: ${detectedCategory}\n` +
+  `Severity: ${detectedSeverity}\n` +
+  `Priority: ${detectedPriority}\n` +
+  `Defect Type: ${detectedDefectType}\n` +
+  `Affected Module: ${detectedModule || "Not identified"}`
+);
     } catch (err) {
       console.error(
         "AI report error:",
@@ -239,7 +268,9 @@ export default function CreateIssueForm() {
   // SAVE ISSUE
   // ==========================================
 
-  const saveIssue = async () => {
+  const saveIssue = async (
+    skipDuplicateCheck = false
+  ) => {
     if (!token) {
       alert("Please login again.");
       navigate("/login");
@@ -267,6 +298,10 @@ export default function CreateIssueForm() {
     try {
       setSaving(true);
 
+      // ========================================
+      // CREATE ISSUE
+      // ========================================
+
       await axios.post(
         "http://localhost:5000/api/issues/save",
         {
@@ -276,9 +311,18 @@ export default function CreateIssueForm() {
           priority,
           severity,
           category,
-
           project,
           report,
+          defectType,
+affectedModule,
+
+          // ====================================
+          // DUPLICATE OVERRIDE
+          // ====================================
+          // false = perform duplicate detection
+          // true  = user already reviewed duplicates
+          //        and wants to continue
+          skipDuplicateCheck,
         },
         {
           headers: {
@@ -287,9 +331,19 @@ export default function CreateIssueForm() {
         }
       );
 
+      // ========================================
+      // SUCCESS
+      // ========================================
+
       alert(
-        "Issue Saved Successfully!"
+        skipDuplicateCheck
+          ? "Issue Created Successfully!"
+          : "Issue Saved Successfully!"
       );
+
+      // Close popup if open
+      setShowSimilarPopup(false);
+      setSimilarIssues([]);
 
       // Reset form
       setProject("");
@@ -299,8 +353,11 @@ export default function CreateIssueForm() {
       setPriority("Medium");
       setSeverity("Medium");
       setCategory("Other");
+      setDefectType("Other");
+setAffectedModule("");
 
       setReport("");
+      
 
       // Go to issues page
       navigate("/issues");
@@ -309,6 +366,27 @@ export default function CreateIssueForm() {
         "Save issue error:",
         err
       );
+
+      // ========================================
+      // SIMILAR DEFECT DETECTED
+      // ========================================
+
+      if (
+        err.response?.status === 409 &&
+        err.response?.data?.duplicate
+      ) {
+        const matches =
+          err.response?.data?.similarIssues || [];
+
+        setSimilarIssues(matches);
+        setShowSimilarPopup(true);
+
+        return;
+      }
+
+      // ========================================
+      // AUTHENTICATION ERROR
+      // ========================================
 
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
@@ -321,14 +399,48 @@ export default function CreateIssueForm() {
         return;
       }
 
+      // ========================================
+      // OTHER ERRORS
+      // ========================================
+
       alert(
         err.response?.data?.error ||
           err.response?.data?.message ||
+          err.message ||
           "Failed to save issue"
       );
     } finally {
       setSaving(false);
     }
+  };
+
+  // ==========================================
+  // CONTINUE ANYWAY
+  // ==========================================
+
+  const saveIssueWithoutDuplicateCheck = () => {
+    setShowSimilarPopup(false);
+
+    // Give the popup a moment to close,
+    // then create the issue while telling
+    // the backend that duplicates were already
+    // reviewed by the user.
+    setTimeout(() => {
+      saveIssue(true);
+    }, 100);
+  };
+
+  // ==========================================
+  // VIEW EXISTING ISSUE
+  // ==========================================
+
+  const viewExistingIssues = () => {
+    setShowSimilarPopup(false);
+
+    // Your existing Issues page is the safe
+    // destination because the current project
+    // already uses /issues.
+    navigate("/issues");
   };
 
   // ==========================================
@@ -616,73 +728,217 @@ export default function CreateIssueForm() {
             category and severity.
           </div>
 
-          {/* AI DETECTED VALUES */}
+          {/* ==========================================
+    AI DETECTED VALUES
+========================================== */}
 
-          {(triaging || report) && (
-            <div
-              style={{
-                background: "#fdf5f3",
-                border: "1px solid #eadbd6",
-                borderRadius: "10px",
-                padding: "15px",
-                marginBottom: "22px",
-              }}
-            >
-              <strong
-                style={{
-                  color: "#702f43",
-                }}
-              >
-                AI Triage Result
-              </strong>
+{(triaging || report) && (
+  <div
+    style={{
+      background: "#fdf5f3",
+      border: "1px solid #eadbd6",
+      borderRadius: "10px",
+      padding: "18px",
+      marginBottom: "22px",
+    }}
+  >
+    <strong
+      style={{
+        color: "#702f43",
+        fontSize: "16px",
+      }}
+    >
+      🤖 AI Defect Classification
+    </strong>
 
-              {triaging ? (
-                <p
-                  style={{
-                    marginBottom: 0,
-                    color: "#75676a",
-                  }}
-                >
-                  Analyzing bug category and
-                  severity...
-                </p>
-              ) : (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    display: "flex",
-                    gap: "12px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <span
-                    style={{
-                      padding: "7px 12px",
-                      borderRadius: "20px",
-                      background: "#eadbd6",
-                      color: "#702f43",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Category: {category}
-                  </span>
+    {triaging ? (
+      <p
+        style={{
+          marginBottom: 0,
+          marginTop: "10px",
+          color: "#75676a",
+        }}
+      >
+        AI is analyzing the defect...
+      </p>
+    ) : (
+      <div
+        style={{
+          marginTop: "14px",
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "12px",
+        }}
+      >
+        {/* CATEGORY */}
+        <div
+          style={{
+            padding: "12px",
+            background: "#eadbd6",
+            borderRadius: "9px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#8b777d",
+              fontWeight: "700",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            Category
+          </div>
 
-                  <span
-                    style={{
-                      padding: "7px 12px",
-                      borderRadius: "20px",
-                      background: "#eadbd6",
-                      color: "#702f43",
-                      fontWeight: "600",
-                    }}
-                  >
-                    Severity: {severity}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          <div
+            style={{
+              color: "#702f43",
+              fontWeight: "700",
+            }}
+          >
+            {category}
+          </div>
+        </div>
 
+        {/* SEVERITY */}
+        <div
+          style={{
+            padding: "12px",
+            background: "#eadbd6",
+            borderRadius: "9px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#8b777d",
+              fontWeight: "700",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            Severity
+          </div>
+
+          <div
+            style={{
+              color: "#702f43",
+              fontWeight: "700",
+            }}
+          >
+            {severity}
+          </div>
+        </div>
+
+        {/* PRIORITY */}
+        <div
+          style={{
+            padding: "12px",
+            background: "#eadbd6",
+            borderRadius: "9px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#8b777d",
+              fontWeight: "700",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            Priority
+          </div>
+
+          <div
+            style={{
+              color: "#702f43",
+              fontWeight: "700",
+            }}
+          >
+            {priority}
+          </div>
+        </div>
+
+        {/* DEFECT TYPE */}
+        <div
+          style={{
+            padding: "12px",
+            background: "#eadbd6",
+            borderRadius: "9px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#8b777d",
+              fontWeight: "700",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            Defect Type
+          </div>
+
+          <div
+            style={{
+              color: "#702f43",
+              fontWeight: "700",
+            }}
+          >
+            {defectType}
+          </div>
+        </div>
+
+        {/* AFFECTED MODULE */}
+        <div
+          style={{
+            padding: "12px",
+            background: "#eadbd6",
+            borderRadius: "9px",
+            gridColumn: "1 / -1",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#8b777d",
+              fontWeight: "700",
+              marginBottom: "4px",
+              textTransform: "uppercase",
+            }}
+          >
+            Affected Module
+          </div>
+
+          <div
+            style={{
+              color: "#702f43",
+              fontWeight: "700",
+            }}
+          >
+            {affectedModule || "Not specified"}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {!triaging && report && (
+      <p
+        style={{
+          margin: "14px 0 0",
+          fontSize: "12px",
+          color: "#75676a",
+        }}
+      >
+        💡 These classifications were suggested by AI and
+        can be reviewed before saving the defect.
+      </p>
+    )}
+  </div>
+)}           
+         
           {/* GENERATE REPORT */}
 
           <button
@@ -760,7 +1016,7 @@ export default function CreateIssueForm() {
 
               <button
                 type="button"
-                onClick={saveIssue}
+                onClick={() => saveIssue(false)}
                 disabled={saving || loading}
                 style={{
                   marginTop: "25px",
@@ -792,6 +1048,457 @@ export default function CreateIssueForm() {
           )}
         </div>
       </div>
+
+      {/* ==========================================
+          SIMILAR DEFECT POPUP
+      ========================================== */}
+
+      {showSimilarPopup && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background:
+              "rgba(0, 0, 0, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onClick={() =>
+            setShowSimilarPopup(false)
+          }
+        >
+          <div
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+            style={{
+              width: "100%",
+              maxWidth: "680px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              background: "#fffaf8",
+              borderRadius: "18px",
+              padding: "28px",
+              boxShadow:
+                "0 20px 60px rgba(0,0,0,0.25)",
+              border: "1px solid #eadbd6",
+            }}
+          >
+            {/* POPUP HEADER */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "flex-start",
+                gap: "15px",
+                marginBottom: "20px",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    color: "#702f43",
+                    fontSize: "22px",
+                  }}
+                >
+                  ⚠️ Similar Defect Detected
+                </h2>
+
+                <p
+                  style={{
+                    margin: "7px 0 0",
+                    color: "#75676a",
+                    fontSize: "13px",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  Our AI found existing defects
+                  that may be related to the
+                  issue you are trying to create.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowSimilarPopup(false)
+                }
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  border: "none",
+                  borderRadius: "50%",
+                  background: "#f1e5e1",
+                  color: "#702f43",
+                  fontSize: "22px",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* CURRENT ISSUE */}
+
+            <div
+              style={{
+                padding: "14px",
+                background: "#f8eeeb",
+                border:
+                  "1px solid #eadbd6",
+                borderRadius: "10px",
+                marginBottom: "18px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "700",
+                  color: "#8b777d",
+                  textTransform:
+                    "uppercase",
+                  marginBottom: "6px",
+                }}
+              >
+                New Issue
+              </div>
+
+              <div
+                style={{
+                  color: "#4b3b3f",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                }}
+              >
+                {title}
+              </div>
+
+              <div
+                style={{
+                  marginTop: "6px",
+                  color: "#75676a",
+                  fontSize: "12px",
+                  lineHeight: "1.5",
+                }}
+              >
+                {description}
+              </div>
+            </div>
+
+            {/* SIMILAR ISSUES */}
+
+            <div
+              style={{
+                marginBottom: "10px",
+                color: "#702f43",
+                fontSize: "12px",
+                fontWeight: "700",
+                textTransform:
+                  "uppercase",
+              }}
+            >
+              Similar Existing Defects
+            </div>
+
+            {similarIssues.length === 0 ? (
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: "#75676a",
+                  background: "#fdf5f3",
+                  borderRadius: "10px",
+                }}
+              >
+                No similar issue details
+                available.
+              </div>
+            ) : (
+              similarIssues.map(
+                (issue, index) => (
+                  <div
+                    key={
+                      issue.issueId ||
+                      index
+                    }
+                    style={{
+                      background:
+                        "#fdf5f3",
+                      border:
+                        "1px solid #eadbd6",
+                      borderRadius: "12px",
+                      padding: "16px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    {/* ISSUE HEADER */}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "flex-start",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          minWidth: 0,
+                        }}
+                      >
+                        <h3
+                          style={{
+                            margin: 0,
+                            color:
+                              "#4b3b3f",
+                            fontSize:
+                              "15px",
+                          }}
+                        >
+                          {issue.title ||
+                            "Untitled Issue"}
+                        </h3>
+
+                        <p
+                          style={{
+                            margin:
+                              "7px 0 0",
+                            color:
+                              "#75676a",
+                            fontSize:
+                              "12px",
+                            lineHeight:
+                              "1.5",
+                          }}
+                        >
+                          {issue.description ||
+                            "No description available."}
+                        </p>
+                      </div>
+
+                      <span
+                        style={{
+                          background:
+                            "#eadbd6",
+                          color:
+                            "#702f43",
+                          padding:
+                            "6px 10px",
+                          borderRadius:
+                            "20px",
+                          fontWeight:
+                            "700",
+                          fontSize:
+                            "11px",
+                          whiteSpace:
+                            "nowrap",
+                        }}
+                      >
+                        {issue.similarityPercentage ??
+                          Math.round(
+                            (issue.similarity ||
+                              0) * 100
+                          )}
+                        % similar
+                      </span>
+                    </div>
+
+                    {/* ISSUE DETAILS */}
+
+                    <div
+                      style={{
+                        display:
+                          "flex",
+                        gap: "7px",
+                        flexWrap:
+                          "wrap",
+                        marginTop:
+                          "12px",
+                      }}
+                    >
+                      {issue.status && (
+                        <span
+                          style={
+                            similarTagStyle
+                          }
+                        >
+                          {issue.status}
+                        </span>
+                      )}
+
+                      {issue.priority && (
+                        <span
+                          style={
+                            similarTagStyle
+                          }
+                        >
+                          Priority:{" "}
+                          {issue.priority}
+                        </span>
+                      )}
+
+                      {issue.severity && (
+                        <span
+                          style={
+                            similarTagStyle
+                          }
+                        >
+                          Severity:{" "}
+                          {issue.severity}
+                        </span>
+                      )}
+
+                      {issue.category && (
+                        <span
+                          style={
+                            similarTagStyle
+                          }
+                        >
+                          {issue.category}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* VIEW EXISTING ISSUE */}
+
+                    <button
+                      type="button"
+                      onClick={
+                        viewExistingIssues
+                      }
+                      style={{
+                        marginTop:
+                          "12px",
+                        width: "100%",
+                        padding:
+                          "9px",
+                        border:
+                          "1px solid #702f43",
+                        borderRadius:
+                          "8px",
+                        background:
+                          "#fffaf8",
+                        color:
+                          "#702f43",
+                        cursor:
+                          "pointer",
+                        fontWeight:
+                          "600",
+                        fontSize:
+                          "12px",
+                      }}
+                    >
+                      🔎 View Existing Issues
+                    </button>
+                    
+                  </div>
+                )
+              )
+            )}
+
+            {/* INFORMATION */}
+
+            <div
+              style={{
+                marginTop: "18px",
+                padding: "13px",
+                background:
+                  "#fff8e8",
+                border:
+                  "1px solid #ead9a7",
+                borderRadius: "10px",
+                color: "#75632d",
+                fontSize: "12px",
+                lineHeight: "1.6",
+              }}
+            >
+              <strong>
+                💡 Why am I seeing this?
+              </strong>
+
+              <br />
+
+              The system compares the meaning
+              of your defect description with
+              previously reported defects using
+              semantic AI similarity.
+            </div>
+
+            {/* POPUP ACTIONS */}
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "20px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setShowSimilarPopup(false)
+                }
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  border:
+                    "1px solid #702f43",
+                  borderRadius: "9px",
+                  background:
+                    "#fffaf8",
+                  color: "#702f43",
+                  cursor:
+                    "pointer",
+                  fontWeight:
+                    "600",
+                  fontSize: "13px",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  saveIssueWithoutDuplicateCheck
+                }
+                disabled={saving}
+                style={{
+                  flex: 1,
+                  padding: "12px",
+                  border: "none",
+                  borderRadius: "9px",
+                  background:
+                    saving
+                      ? "#b9a6aa"
+                      : "#702f43",
+                  color: "#ffffff",
+                  cursor:
+                    saving
+                      ? "not-allowed"
+                      : "pointer",
+                  fontWeight:
+                    "600",
+                  fontSize: "13px",
+                }}
+              >
+                {saving
+                  ? "Creating..."
+                  : "Continue Anyway"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -818,4 +1525,14 @@ const inputStyle = {
   background: "#ffffff",
   color: "#352b2d",
   outline: "none",
+};
+
+const similarTagStyle = {
+  display: "inline-block",
+  padding: "5px 9px",
+  borderRadius: "15px",
+  background: "#eadbd6",
+  color: "#702f43",
+  fontSize: "10px",
+  fontWeight: "600",
 };

@@ -10,6 +10,7 @@ const {
   deleteIssue,
   saveIssue,
   getSavedIssues,
+  semanticSearch,
 } = require("../controllers/issueController");
 
 
@@ -42,5 +43,11 @@ router.put("/:id", authMiddleware, updateIssue);
 // DELETE ISSUE
 // =========================================
 router.delete("/:id", authMiddleware, deleteIssue);
+
+router.get(
+  "/semantic-search",
+  authMiddleware,
+  semanticSearch
+);
 
 module.exports = router;

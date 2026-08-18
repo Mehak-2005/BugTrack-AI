@@ -14,7 +14,7 @@ const commentRoutes = require("./routes/commentRoutes");
 const attachmentRoutes = require("./routes/attachmentRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const sprintRoutes = require("./routes/sprintRoutes");
-
+const teamMemberRoutes = require("./routes/teamMemberRoutes");
 const app = express();
 app.use(
   "/uploads",
@@ -31,14 +31,14 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/sprints", sprintRoutes);
-
+app.use("/api/team", teamMemberRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
 app.get("/", (req,res)=>{
-    res.send("BugTrack AI Backend Running");
+    res.send("DefectIQ Backend Running");
 });
 
 const PORT = process.env.PORT || 5000;

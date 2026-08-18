@@ -1,0 +1,326 @@
+/* ==========================================
+   AI RESOLUTION VERIFICATION MODAL
+========================================== */
+
+.resolution-verification-modal {
+  width: 700px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.resolution-verification-header {
+  background: #7d2949;
+  color: white;
+  padding: 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.resolution-verification-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.resolution-verification-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.resolution-verification-header .modal-close {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resolution-verification-header .modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================
+   BODY
+========================================== */
+
+.resolution-verification-body {
+  padding: 26px 28px;
+  overflow-y: auto;
+}
+
+/* ==========================================
+   ISSUE SECTION
+========================================== */
+
+.verification-issue {
+  background: #faf4f5;
+  border: 1px solid #ead8de;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.verification-issue span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8a6874;
+  letter-spacing: 0.5px;
+}
+
+.verification-issue h3 {
+  margin: 8px 0;
+  font-size: 19px;
+  color: #38252d;
+}
+
+.verification-issue p {
+  margin: 0;
+  color: #705d65;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ==========================================
+   DEVELOPER FIX
+========================================== */
+
+.developer-fix-section {
+  margin-bottom: 20px;
+}
+
+.developer-fix-section label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #54283a;
+}
+
+.developer-fix-section textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 150px;
+  border: 1px solid #dbc8ce;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #38252d;
+  outline: none;
+  background: #fff;
+}
+
+.developer-fix-section textarea:focus {
+  border-color: #8a3454;
+  box-shadow: 0 0 0 3px rgba(138, 52, 84, 0.1);
+}
+
+/* ==========================================
+   VERIFY BUTTON
+========================================== */
+
+.verify-resolution-button {
+  width: 100%;
+  border: none;
+  border-radius: 11px;
+  padding: 14px 20px;
+  background: #7d2949;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.verify-resolution-button:hover:not(:disabled) {
+  background: #68213d;
+  transform: translateY(-1px);
+}
+
+.verify-resolution-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ==========================================
+   VERIFICATION SCORE
+========================================== */
+
+.verification-score {
+  background: #f8e5ea;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.verification-score span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #733149;
+}
+
+.verification-score strong {
+  font-size: 30px;
+  color: #7d2949;
+}
+
+/* ==========================================
+   VERIFICATION CARDS
+========================================== */
+
+.verification-card {
+  border-bottom: 1px solid #eadfe2;
+  padding: 18px 0;
+}
+
+.verification-card h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: #6f2945;
+}
+
+.verification-card p {
+  margin: 0;
+  color: #705d65;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.verification-card ul,
+.verification-card ol {
+  margin: 8px 0 0;
+  padding-left: 22px;
+  color: #705d65;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.verification-card li {
+  margin-bottom: 5px;
+}
+
+/* ==========================================
+   REGRESSION RISK
+========================================== */
+
+.regression-risk {
+  display: inline-block;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.regression-risk.low {
+  background: #e4f3e8;
+  color: #28733d;
+}
+
+.regression-risk.medium {
+  background: #fff1d6;
+  color: #98630d;
+}
+
+.regression-risk.high {
+  background: #f9dfe2;
+  color: #a52d3b;
+}
+
+/* ==========================================
+   FINAL RECOMMENDATION
+========================================== */
+
+.final-recommendation {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #edf7ef;
+  border: 1px solid #cfe6d4;
+}
+
+.final-recommendation span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #52705a;
+  margin-bottom: 7px;
+}
+
+.final-recommendation strong {
+  font-size: 17px;
+  color: #28733d;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.resolution-verification-footer {
+  padding: 16px 28px;
+  border-top: 1px solid #eee1e5;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.resolution-verification-footer button {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 24px;
+  background: #eee1e5;
+  color: #6f2945;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.resolution-verification-footer button:hover {
+  background: #e3d2d8;
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width: 700px) {
+  .resolution-verification-modal {
+    width: 94vw;
+    max-height: 90vh;
+  }
+
+  .resolution-verification-header {
+    padding: 20px;
+  }
+
+  .resolution-verification-body {
+    padding: 20px;
+  }
+
+  .resolution-verification-header h2 {
+    font-size: 20px;
+  }
+
+  .verification-score strong {
+    font-size: 26px;
+  }
+}

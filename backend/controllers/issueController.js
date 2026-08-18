@@ -45,6 +45,20 @@ const VALID_CATEGORIES = [
 ];
 
 // =====================================================
+// VALID DEFECT TYPES
+// =====================================================
+
+const VALID_DEFECT_TYPES = [
+  "Functional",
+  "UI",
+  "Performance",
+  "Security",
+  "Integration",
+  "Data",
+  "Other",
+];
+
+// =====================================================
 // DUPLICATE DETECTION CONFIGURATION
 // =====================================================
 
@@ -93,7 +107,7 @@ const findSimilarIssues = async ({
     const existingIssues =
       await Issue.find(query)
         .select(
-          "_id title description status priority severity category project embedding"
+          "_id title description status priority severity category defectType affectedModule project embedding"
         )
         .limit(100);
 
@@ -132,6 +146,11 @@ const findSimilarIssues = async ({
             Math.round(similarity * 100) / 100,
           similarityPercentage:
             Math.round(similarity * 100),
+            defectType:
+  existingIssue.defectType,
+
+affectedModule:
+  existingIssue.affectedModule,
         });
       }
     }
@@ -173,6 +192,9 @@ exports.createIssue = async (req, res) => {
       severity,
       category,
       sprint,
+       defectType,
+  affectedModule,
+       skipDuplicateCheck = false,
     } = req.body;
 
     // =================================================
@@ -241,6 +263,19 @@ exports.createIssue = async (req, res) => {
     }
 
     // =================================================
+// VALIDATE DEFECT TYPE
+// =================================================
+
+if (
+  defectType &&
+  !VALID_DEFECT_TYPES.includes(defectType)
+) {
+  return res.status(400).json({
+    message: "Invalid defect type",
+  });
+}
+
+    // =================================================
     // GENERATE EMBEDDING + CHECK DUPLICATES
     // =================================================
 
@@ -257,7 +292,8 @@ exports.createIssue = async (req, res) => {
     // DUPLICATE FOUND
     // =================================================
 
-    if (similarIssues.length > 0) {
+    if (!skipDuplicateCheck &&
+  similarIssues.length > 0 ) {
       return res.status(409).json({
         message:
           "A similar issue already exists",
@@ -269,37 +305,45 @@ exports.createIssue = async (req, res) => {
     // =================================================
     // CREATE ISSUE
     // =================================================
-
     const issue = await Issue.create({
-      title: title?.trim(),
-      description:
-        description.trim(),
-      report,
+  title: title?.trim(),
 
-      status:
-        status || "Open",
+  description:
+    description.trim(),
 
-      priority:
-        priority || "Medium",
+  report,
 
-      severity:
-        severity || "Medium",
+  status:
+    status || "Open",
 
-      category:
-        category || "Other",
+  priority:
+    priority || "Medium",
 
-      project:
-        project || undefined,
+  severity:
+    severity || "Medium",
 
-      sprint:
-        sprint || undefined,
+  category:
+    category || "Other",
 
-      reportedBy:
-        req.user.id,
+  defectType:
+    defectType || "Other",
 
-      // Store semantic embedding
-      embedding,
-    });
+  affectedModule:
+    affectedModule?.trim() ||
+    "Not specified",
+
+  project:
+    project || undefined,
+
+  sprint:
+    sprint || undefined,
+
+  reportedBy:
+    req.user.id,
+
+  // Store semantic embedding
+  embedding,
+});
 
     // =================================================
     // RECORD ISSUE CREATED
@@ -395,6 +439,9 @@ exports.saveIssue = async (
       severity,
       category,
       project,
+      affectedModule,
+       defectType,
+      skipDuplicateCheck = false
     } = req.body;
 
     // =================================================
@@ -460,6 +507,18 @@ exports.saveIssue = async (
     }
 
     // =================================================
+// VALIDATE DEFECT TYPE
+// =================================================
+
+if (
+  defectType &&
+  !VALID_DEFECT_TYPES.includes(defectType)
+) {
+  return res.status(400).json({
+    message: "Invalid defect type",
+  });
+}
+    // =================================================
     // GENERATE EMBEDDING + CHECK DUPLICATES
     // =================================================
 
@@ -476,7 +535,8 @@ exports.saveIssue = async (
     // DUPLICATE FOUND
     // =================================================
 
-    if (similarIssues.length > 0) {
+    if ( !skipDuplicateCheck &&
+  similarIssues.length > 0) {
       return res.status(409).json({
         message:
           "A similar issue already exists",
@@ -488,36 +548,42 @@ exports.saveIssue = async (
     // =================================================
     // CREATE SAVED AI ISSUE
     // =================================================
-
     const issue =
-      await Issue.create({
-        title: title?.trim(),
+  await Issue.create({
+    title: title?.trim(),
 
-        description:
-          description.trim(),
+    description:
+      description.trim(),
 
-        report,
+    report,
 
-        status: "Open",
+    status: "Open",
 
-        priority:
-          priority || "Medium",
+    priority:
+      priority || "Medium",
 
-        severity:
-          severity || "Medium",
+    severity:
+      severity || "Medium",
 
-        category:
-          category || "Other",
+    category:
+      category || "Other",
 
-        project:
-          project || undefined,
+    defectType:
+      defectType || "Other",
 
-        reportedBy:
-          req.user.id,
+    affectedModule:
+      affectedModule?.trim() ||
+      "Not specified",
 
-        // Store embedding
-        embedding,
-      });
+    project:
+      project || undefined,
+
+    reportedBy:
+      req.user.id,
+
+    embedding,
+  });
+
 
     // =================================================
     // RECORD AI ISSUE CREATED
@@ -624,6 +690,8 @@ exports.updateIssue = async (
       category,
       project,
       sprint,
+      defectType,
+  affectedModule,
     } = req.body;
 
     // =================================================
@@ -735,6 +803,15 @@ exports.updateIssue = async (
       }
     }
 
+    if (
+  defectType &&
+  !VALID_DEFECT_TYPES.includes(defectType)
+) {
+  return res.status(400).json({
+    message: "Invalid defect type",
+  });
+}
+
     // =================================================
     // BUILD UPDATE DATA
     // =================================================
@@ -781,6 +858,15 @@ exports.updateIssue = async (
       updateData.sprint =
         sprint;
     }
+    if (defectType !== undefined) {
+  updateData.defectType =
+    defectType;
+}
+
+if (affectedModule !== undefined) {
+  updateData.affectedModule =
+    affectedModule.trim();
+}
 
     // =================================================
     // REGENERATE EMBEDDING IF DESCRIPTION CHANGED
@@ -1093,6 +1179,56 @@ exports.deleteIssue = async (req,res) => {
     res.status(500).json({
       message:
         "Failed to delete issue",
+      error: error.message,
+    });
+  }
+};
+
+// =========================================
+// SEMANTIC SEARCH
+// =========================================
+exports.semanticSearch = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({
+        message: "Search query is required",
+      });
+    }
+
+    // Generate embedding for user's search query
+    const queryEmbedding = await generateEmbedding(query.trim());
+
+    // Get issues belonging to the logged-in user
+    const issues = await Issue.find({
+      reportedBy: req.user.id,
+      embedding: { $exists: true, $ne: [] },
+    }).lean();
+
+    // Calculate semantic similarity
+    const results = issues
+      .map((issue) => ({
+        ...issue,
+        similarity: cosineSimilarity(
+          queryEmbedding,
+          issue.embedding
+        ),
+      }))
+      .filter((issue) => issue.similarity >= 0.45)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 10);
+
+    return res.status(200).json({
+      query,
+      results,
+    });
+
+  } catch (error) {
+    console.error("Semantic Search Error:", error);
+
+    return res.status(500).json({
+      message: "Semantic search failed",
       error: error.message,
     });
   }

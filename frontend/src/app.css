@@ -428,8 +428,7 @@ body {
 .stats-grid {
   display: grid;
 
-  grid-template-columns:
-    repeat(5, minmax(150px, 1fr));
+  grid-template-columns:repeat(5, minmax(150px, 1fr));
 
   gap: 18px;
 }
@@ -1233,8 +1232,7 @@ body {
 
 @media (max-width: 1150px) {
   .stats-grid {
-    grid-template-columns:
-      repeat(3, 1fr);
+    grid-template-columns:repeat(3, 1fr);
   }
 }
 
@@ -2436,28 +2434,28 @@ body {
 ========================================= */
 
 .issues-page .kanban-board {
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   margin-top: 28px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
-
-
 /* ALL COLUMNS USE SAME BASE */
 
 .issues-page .kanban-column {
   background: rgba(255, 255, 255, 0.65);
-
   border: 1px solid #eadbd6;
   border-radius: 16px;
-
-  padding: 20px;
-
+  padding: 14px;
   min-height: 420px;
-
-  box-shadow:
-    0 5px 18px rgba(75, 45, 53, 0.05);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow:0 5px 18px rgba(75, 45, 53, 0.05);
 }
-
-
 /* Instead of giant orange/yellow/green backgrounds */
 
 .issues-page .open-column {
@@ -2474,15 +2472,11 @@ body {
   background: #f8faf5;
   border-top: 4px solid #71866b;
 }
-
-
 /* COLUMN HEADER */
 
 .issues-page .kanban-column h3 {
   color: #422f35;
 }
-
-
 /* =========================================
    ISSUE CARD
 ========================================= */
@@ -2634,4 +2628,41 @@ body {
 /* Delete button occupies full second row */
 .issues-page .issue-actions .delete-btn {
   grid-column: 1 / -1;
+}
+
+.issue-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+}
+/* FIX ISSUE PAGE HORIZONTAL OVERFLOW */
+.issues-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.issues-page * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.issues-page .issue-card,
+.issues-page .kanban-column,
+.issues-page .issue-actions {
+  overflow-x: hidden;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }

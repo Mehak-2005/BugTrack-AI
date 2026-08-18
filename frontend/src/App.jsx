@@ -11,6 +11,7 @@ import RegisterPage from "./pages/RegisterPage";
 import Dashboard from "./pages/Dashboard";
 import ProjectPage from "./pages/ProjectPage";
 import IssuesPage from "./pages/IssuesPage";
+import TeamPage from "./pages/TeamPage";
 import CreateIssueForm from "./pages/CreateIssueForm";
 import ActivityPage from "./pages/ActivityPage";
 import SprintPage from "./pages/SprintPage";
@@ -74,6 +75,7 @@ function App() {
             path="/issues"
             element={<IssuesPage />}
           />
+          <Route path="/team" element={<TeamPage />} />
 
           <Route
             path="/create-issue"
@@ -85,10 +87,6 @@ function App() {
     element={<ActivityPage />}
   />
 
-          <Route
-  path="/activity"
-  element={<ActivityPage />}
-/>
 
 <Route path="/sprints" element={<SprintPage />} />
         </Route>

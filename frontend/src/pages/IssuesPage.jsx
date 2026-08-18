@@ -1,4 +1,6 @@
+
 import { useEffect, useState } from "react";
+import ResolutionAssistantModal from "../components/ResolutionAssistantModal";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,6 +17,12 @@ import {
   getIssues,
   updateIssue,
 } from "../services/issueService";
+import {
+  assignIssueToTeamMember,
+} from "../services/teamService";
+import TestCasesModal from "../components/TestCasesModal";
+import DeveloperRecommendationModal from "../components/DeveloperRecommendationModal";
+import ResolutionVerificationModal from "../components/ResolutionVerificationModal";
 
 export default function IssuesPage() {
   const navigate = useNavigate();
@@ -58,8 +66,24 @@ const [commentsLoading, setCommentsLoading] =useState(null);
 const [commentSubmitting, setCommentSubmitting] =useState(null);
 const [selectedReport, setSelectedReport] = useState(null);
 const [sprints, setSprints] = useState([]);
-
-  const token = localStorage.getItem("token");
+const [openIssueMenu, setOpenIssueMenu] = useState(null);
+const [expandedIssueDetails, setExpandedIssueDetails] = useState(null);
+// AI RESOLUTION ASSISTANCE
+const [selectedResolutionIssue, setSelectedResolutionIssue] =useState(null);
+const [resolutionLoadingId, setResolutionLoadingId] = useState(null);
+const [showTestCasesModal, setShowTestCasesModal] = useState(false);
+const [testCases, setTestCases] = useState([]);
+const [generatingTestCases, setGeneratingTestCases] = useState(false);
+const [recommendedDeveloper, setRecommendedDeveloper] = useState(null);
+const [recommendedIssue, setRecommendedIssue] = useState(null);
+const [showDeveloperModal, setShowDeveloperModal] = useState(false);
+const [loadingRecommendation, setLoadingRecommendation] = useState(false);
+const [selectedVerificationIssue, setSelectedVerificationIssue] =useState(null);
+const [showVerificationModal, setShowVerificationModal] = useState(false);
+const [verificationLoading, setVerificationLoading] = useState(false);
+const [verificationResult, setVerificationResult] = useState(null);
+const [developerFix, setDeveloperFix] = useState("")
+const token = localStorage.getItem("token");
 
   // =====================================================
   // AUTH CONFIG
@@ -125,7 +149,256 @@ const [sprints, setSprints] = useState([]);
   }
 };
 
-  // =====================================================
+const generateTestCases = async (issueId) => {
+  try {
+    setGeneratingTestCases(true);
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `http://localhost:5000/api/ai/generate-tests/${issueId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Failed to generate test cases"
+      );
+    }
+
+    setTestCases(data.testCases || []);
+    setShowTestCasesModal(true);
+
+  } catch (error) {
+    console.error("Test case generation error:", error);
+    alert(error.message || "Failed to generate test cases");
+  } finally {
+    setGeneratingTestCases(false);
+  }
+};
+
+// ==========================================
+// AI DEVELOPER RECOMMENDATION
+// ==========================================
+
+const handleRecommendDeveloper = async (issue) => {
+  try {
+    setLoadingRecommendation(true);
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `http://localhost:5000/api/ai/recommend-developer/${issue._id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Failed to recommend developer"
+      );
+    }
+
+    setRecommendedDeveloper(data.recommendation);
+    setRecommendedIssue(issue);
+    setShowDeveloperModal(true);
+
+  } catch (error) {
+    console.error(
+      "Developer recommendation error:",
+      error
+    );
+
+    alert(error.message);
+
+  } finally {
+    setLoadingRecommendation(false);
+  }
+};
+// =====================================================
+// ASSIGN RECOMMENDED DEVELOPER
+// =====================================================
+
+const handleAssignDeveloper = async (
+  recommendation,
+  issue
+) => {
+  try {
+    if (!recommendation || !issue) {
+      alert("Developer or issue information is missing.");
+      return;
+    }
+
+    // ==========================================
+    // GET RECOMMENDED DEVELOPER NAME
+    // ==========================================
+
+    const developerName =
+      recommendation.recommendedDeveloperName;
+
+    if (!developerName) {
+      alert("Recommended developer name is missing.");
+      return;
+    }
+
+    // ==========================================
+    // GET TEAM MEMBERS
+    // ==========================================
+
+    const teamResponse =
+      await axios.get(
+        "http://localhost:5000/api/team",
+        getAuthConfig()
+      );
+
+    const teamMembers =
+      Array.isArray(teamResponse.data)
+        ? teamResponse.data
+        : [];
+
+    // ==========================================
+    // FIND RECOMMENDED TEAM MEMBER
+    // ==========================================
+
+    const member = teamMembers.find(
+      (person) =>
+        person.name?.trim().toLowerCase() ===
+        developerName.trim().toLowerCase()
+    );
+
+    if (!member) {
+      alert(
+        `Could not find ${developerName} in your team members.`
+      );
+
+      return;
+    }
+
+    // ==========================================
+    // ASSIGN ISSUE
+    // ==========================================
+
+    await assignIssueToTeamMember(
+      member._id,
+      {
+        issueId: issue._id,
+        title:
+          issue.title ||
+          "Untitled Issue",
+        priority:
+          issue.priority ||
+          "Medium",
+      }
+    );
+
+    // ==========================================
+    // SUCCESS
+    // ==========================================
+
+    alert(
+      `${developerName} has been assigned this issue successfully.`
+    );
+
+    // Close modal
+    setShowDeveloperModal(false);
+
+    // Clear selected recommendation
+    setRecommendedDeveloper(null);
+    setRecommendedIssue(null);
+
+  } catch (error) {
+    console.error(
+      "Assign developer error:",
+      error
+    );
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    alert(
+      error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to assign issue"
+    );
+  }
+};
+const handleVerifyResolution = async (issue) => {
+  if (!developerFix.trim()) {
+    alert("Please describe the developer's fix.");
+    return;
+  }
+
+  try {
+    setVerificationLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `http://localhost:5000/api/ai/verify-resolution/${issue._id}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: JSON.stringify({
+          developerFix: developerFix.trim(),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || "Failed to verify resolution"
+      );
+    }
+
+    setVerificationResult(data.verification);
+
+  } catch (error) {
+
+    console.error(
+      "Resolution verification error:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Failed to verify resolution"
+    );
+
+  } finally {
+    setVerificationLoading(false);
+  }
+};
+// =====================================================
 // FETCH COMMENTS
 // =====================================================
 
@@ -436,6 +709,85 @@ const deleteComment = async (
       setUpdatingId(null);
     }
   };
+
+  // =====================================================
+// AI RESOLUTION ASSISTANCE
+// =====================================================
+
+const analyzeResolution = async (issueId) => {
+  if (!token) {
+    alert("Please login again.");
+    navigate("/login");
+    return;
+  }
+
+  try {
+    setResolutionLoadingId(issueId);
+
+    const res = await axios.post(
+      `http://localhost:5000/api/ai/analyze-resolution/${issueId}`,
+      {},
+      getAuthConfig()
+    );
+
+    const analysis = res.data?.analysis;
+
+    if (!analysis) {
+      throw new Error(
+        "AI did not return resolution analysis"
+      );
+    }
+
+    // Update issue inside the page immediately
+    setIssues((previousIssues) =>
+      previousIssues.map((issue) =>
+        issue._id === issueId
+          ? {
+              ...issue,
+              aiAnalysis: analysis,
+            }
+          : issue
+      )
+    );
+
+    // Update the currently opened modal
+    setSelectedResolutionIssue((previous) =>
+      previous && previous._id === issueId
+        ? {
+            ...previous,
+            aiAnalysis: analysis,
+          }
+        : previous
+    );
+
+  } catch (error) {
+    console.error(
+      "AI resolution analysis error:",
+      error
+    );
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      navigate("/login", {
+        replace: true,
+      });
+
+      return;
+    }
+
+    alert(
+      error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to generate AI resolution assistance"
+    );
+
+  } finally {
+    setResolutionLoadingId(null);
+  }
+};
 
   // =====================================================
 // DELETE ISSUE
@@ -895,32 +1247,215 @@ const availableStatusOptions =
       >
         {/* DRAG HANDLE */}
 
-        <div
-          {...listeners}
-          {...attributes}
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginBottom: "5px",
-          }}
-        >
-          <span
-            title="Drag issue"
-            style={{
-              cursor: isUpdating
-                ? "wait"
-                : "grab",
-              color: "#a8868e",
-              fontSize: "20px",
-              lineHeight: 1,
-              userSelect: "none",
-              padding: "3px 6px",
-            }}
-          >
-            ⋮⋮
-          </span>
-        </div>
+        {/* TOP BAR */}
 
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px",
+  }}
+>
+  {/* DRAG HANDLE */}
+
+  <div
+    {...listeners}
+    {...attributes}
+    style={{
+      cursor: isUpdating ? "wait" : "grab",
+      color: "#a8868e",
+      fontSize: "18px",
+      lineHeight: 1,
+      userSelect: "none",
+      padding: "3px 6px",
+    }}
+  >
+    ⋮⋮
+  </div>
+
+  {/* THREE DOT MENU */}
+
+  <button
+    type="button"
+    onClick={() =>
+      setOpenIssueMenu(
+        openIssueMenu === issue._id
+          ? null
+          : issue._id
+      )
+    }
+    style={{
+      border: "none",
+      background: "transparent",
+      color: "#702f43",
+      fontSize: "22px",
+      fontWeight: "700",
+      cursor: "pointer",
+      padding: "2px 6px",
+      lineHeight: 1,
+    }}
+    title="More actions"
+  >
+    ⋮
+  </button>
+  {openIssueMenu === issue._id && (
+  <div
+    style={{
+      position: "absolute",
+      top: "48px",
+      right: "12px",
+      width: "190px",
+      background: "#fffaf8",
+      border: "1px solid #eadbd6",
+      borderRadius: "12px",
+      boxShadow: "0 10px 25px rgba(75,45,52,0.15)",
+      padding: "6px",
+      zIndex: 2000,
+    }}
+  >
+
+    {/* EDIT DETAILS */}
+
+    <button
+      type="button"
+      onClick={() => {
+        setExpandedIssueDetails(
+          expandedIssueDetails === issue._id
+            ? null
+            : issue._id
+        );
+        setOpenIssueMenu(null);
+      }}
+      style={{
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: "9px 10px",
+        textAlign: "left",
+        borderRadius: "8px",
+        color: "#702f43",
+        cursor: "pointer",
+        fontSize: "13px",
+        fontWeight: "600",
+      }}
+    >
+      ✏️ Edit Details
+    </button>
+      {/* AI REPORT BUTTON */}
+
+{issue.report && (
+  <button
+    type="button"
+    onClick={() => setSelectedReport(issue)}
+    style={{
+      width: "100%",
+      minWidth: 0,
+      padding: "7px 6px",
+      border: "none",
+      textAlign: "left",
+      borderRadius: "8px",
+      background: "#f4e2e5",
+      color: "#702f43",
+      cursor: "pointer",
+      fontWeight: "600",
+      fontSize: "12px",
+    }}
+  >
+  ✨ View AI Report
+  </button>
+)}
+     
+
+    {/* COMMENTS */}
+
+    <button
+      type="button"
+      onClick={() => {
+        setCommentModalIssue(issue);
+        setOpenIssueMenu(null);
+      }}
+      style={{
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: "9px 10px",
+        textAlign: "left",
+        borderRadius: "8px",
+        color: "#702f43",
+        cursor: "pointer",
+        fontSize: "13px",
+        fontWeight: "600",
+      }}
+    >
+      💬 Comments
+    </button>
+
+    {/* ATTACHMENTS */}
+
+    <button
+      type="button"
+      onClick={async () => {
+        setAttachmentModalIssue(issue);
+        await fetchAttachments(issue._id);
+        setOpenIssueMenu(null);
+      }}
+      style={{
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: "9px 10px",
+        textAlign: "left",
+        borderRadius: "8px",
+        color: "#702f43",
+        cursor: "pointer",
+        fontSize: "13px",
+        fontWeight: "600",
+      }}
+    >
+      📎 Attachments
+    </button>
+
+    <div
+      style={{
+        height: "1px",
+        background: "#eadbd6",
+        margin: "5px 4px",
+      }}
+    />
+
+    {/* DELETE */}
+
+    <button
+      type="button"
+      disabled={isUpdating}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpenIssueMenu(null);
+        deleteIssue(issue._id);
+      }}
+      style={{
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: "9px 10px",
+        textAlign: "left",
+        borderRadius: "8px",
+        color: "#b4233f",
+        cursor: isUpdating ? "wait" : "pointer",
+        fontSize: "13px",
+        fontWeight: "600",
+      }}
+    >
+      🗑 Delete
+    </button>
+
+  </div>
+)}
+</div>
+
+      
         {/* TITLE */}
 
         <h3
@@ -940,19 +1475,20 @@ const availableStatusOptions =
 
         {/* DESCRIPTION */}
 
-        <p
-          style={{
-            color: "#75676a",
-            lineHeight: "1.6",
-            fontSize: "14px",
-            marginBottom: "15px",
-          }}
-        >
-          {issue.description?.length > 120
-            ? `${issue.description.substring(
-                0,
-                120
-              )}...`
+       <p
+  style={{
+    color: "#75676a",
+    lineHeight: "1.5",
+    fontSize: "13px",
+    margin: "0 0 12px",
+    display: "-webkit-box",
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
+  }}
+>
+          {issue.description?.length > 80
+            ? `${issue.description.substring(0,80)}...`
             : issue.description}
         </p>
 
@@ -1046,9 +1582,11 @@ const availableStatusOptions =
           </div>
         )}
 
-        <div style={{ marginBottom: "15px" }}>
-  <label style={fieldLabelStyle}>
-    SPRINT
+        {expandedIssueDetails === issue._id && (
+  <>
+    <div style={{ marginBottom: "15px" }}>
+      <label style={fieldLabelStyle}>
+        SPRINT
   </label>
 
   <select
@@ -1167,6 +1705,8 @@ const availableStatusOptions =
             )
           }
         />
+          </>
+)}
         
         {/* ACTION BUTTONS */}
 
@@ -1179,120 +1719,58 @@ const availableStatusOptions =
     width: "100%",
   }}
 >
-  {/* AI REPORT BUTTON */}
 
-{issue.report && (
-  <button
-    type="button"
-    onClick={() => setSelectedReport(issue)}
-    style={{
-      width: "100%",
-      minWidth: 0,
-      padding: "9px 6px",
-      border: "none",
-      borderRadius: "8px",
-      background: "#f4e2e5",
-      color: "#702f43",
-      cursor: "pointer",
-      fontWeight: "600",
-      fontSize: "13px",
-    }}
-  >
-    View AI Report
-  </button>
-)}
+
+<button
+  onClick={() => generateTestCases(issue._id)}
+  disabled={generatingTestCases}
+  style={{
+    width: "100%",
+    padding: "8px",
+    marginTop: "6px",
+    border: "none",
+    borderRadius: "7px",
+    background: "#7a2948",
+    color: "white",
+    fontWeight: "600",
+    cursor: generatingTestCases
+      ? "not-allowed"
+      : "pointer",
+  }}
+>
+   {generatingTestCases
+    ? "Generating Test Cases..."
+    : "Generate Test Cases"}
+</button>
       
 
-  {/* COMMENTS BUTTON */}
+      {/* AI RESOLUTION ASSISTANCE BUTTON */}
 
 <button
   type="button"
   onClick={() => {
-    console.log("Comments clicked");
-    console.log(issue);
-    setCommentModalIssue(issue);
+    setSelectedResolutionIssue(issue);
+    // If analysis already exists,
+    // show it immediately.
+    // Otherwise generate a new one.
+    if (!issue.aiAnalysis?.probableRootCause) {
+      analyzeResolution(issue._id);
+    }
   }}
-
   style={{
     width: "100%",
-    minWidth: 0,
-    padding: "9px 6px",
+    padding: "8px 6px",
     border: "none",
-    borderRadius: "8px",
-    background: "#eee3df",
-    color: "#702f43",
+    borderRadius: "7px",
+    background: "#702f43",
+    color: "#ffffff",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "13px",
   }}
 >
-  Comments
+   AI Resolution
 </button>
-
-  {/* ATTACHMENTS BUTTON */}
-
-<button
-  type="button"
-  onClick={async (e) => {
-  setAttachmentModalIssue(issue);
-  await fetchAttachments(issue._id);
-}}
-  style={{
-    gridColumn: "1 / -1",
-    width: "100%",
-    padding: "9px",
-    border: "none",
-    borderRadius: "8px",
-
-    background:
-      expandedAttachments === issue._id
-        ? "#702f43"
-        : "#eee3df",
-
-    color:
-      expandedAttachments === issue._id
-        ? "#ffffff"
-        : "#702f43",
-
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
-  }}
->
-  {expandedAttachments === issue._id
-    ? "Hide Attachments"
-    : "Attachments"}
-</button>
-
-  {/* DELETE BUTTON */}
-
-  <button
-    type="button"
-    disabled={isUpdating}
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      deleteIssue(issue._id);
-    }}
-    style={{
-      gridColumn: "1 / -1",
-      width: "100%",
-      padding: "9px",
-      border: "none",
-      borderRadius: "8px",
-      background: "#f8dfe3",
-      color: "#9f2944",
-
-      cursor: isUpdating
-        ? "wait"
-        : "pointer",
-
-      fontWeight: "600",
-      fontSize: "13px",
-    }}
-  >
-    Delete
-  </button>
+ 
 
   {/* ======================================
     ATTACHMENTS PANEL
@@ -1465,9 +1943,6 @@ const availableStatusOptions =
 )}
 </div>
         
-         {/* AI REPORT */}
-
-      
           {/* COMMENTS */}
 
 {expandedComments === issue._id && (
@@ -1662,12 +2137,50 @@ const availableStatusOptions =
             : "Add Comment"}
         </button>
       </>
+      
     )}
   </div>
 )}
+<button
+  type="button"
+  className="recommend-developer-btn"
+  onClick={() => handleRecommendDeveloper(issue)}
+  disabled={loadingRecommendation}
+  style={{
+    ...compactActionButtonStyle,
+    background: "#f4e2e5",
+    color: "#702f43",
+    cursor: loadingRecommendation
+      ? "wait"
+      : "pointer",
+  }}
+>
+  {loadingRecommendation
+    ? "Finding Best Developer..."
+    : "Recommend Developer"}
+</button>
+
+<button
+  type="button"
+  className="verify-resolution-btn"
+  onClick={() => {
+    setSelectedVerificationIssue(issue);
+    setVerificationResult(null);
+    setDeveloperFix("");
+    setShowVerificationModal(true);
+  }}
+  style={{
+    ...compactActionButtonStyle,
+    background: "#eee3df",
+    color: "#702f43",
+  }}
+>
+  Verify Resolution
+</button>
       </div>
     );
   };
+  
 
   // =====================================================
   // DROPPABLE KANBAN COLUMN
@@ -2149,9 +2662,8 @@ const availableStatusOptions =
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                "repeat(4, minmax(280px, 1fr))",
-              gap: "18px",
+              gridTemplateColumns:"repeat(4, minmax(0, 1fr))",
+              gap: "14px",
               alignItems: "start",
               overflowX: "auto",
               paddingBottom: "10px",
@@ -2355,6 +2867,56 @@ const availableStatusOptions =
   issue={selectedReport}
   onClose={() => setSelectedReport(null)}
 />
+<ResolutionAssistantModal
+  issue={selectedResolutionIssue}
+  analysis={
+    selectedResolutionIssue?.aiAnalysis
+  }
+  loading={
+    selectedResolutionIssue &&
+    resolutionLoadingId ===
+      selectedResolutionIssue._id
+  }
+  onClose={() =>
+    setSelectedResolutionIssue(null)
+  }
+  onRegenerate={() => {
+    if (selectedResolutionIssue) {
+      analyzeResolution(
+        selectedResolutionIssue._id
+      );
+    }
+  }}
+/>
+<TestCasesModal
+  open={showTestCasesModal}
+  onClose={() => setShowTestCasesModal(false)}
+  testCases={testCases}
+/>
+<DeveloperRecommendationModal
+  open={showDeveloperModal}
+  recommendation={recommendedDeveloper}
+  issue={recommendedIssue}
+  onClose={() => setShowDeveloperModal(false)}
+  onAssign={handleAssignDeveloper}
+/>
+<ResolutionVerificationModal
+  open={showVerificationModal}
+  issue={selectedVerificationIssue}
+  onClose={() => {
+    setShowVerificationModal(false);
+    setVerificationResult(null);
+    setDeveloperFix("");
+  }}
+  onVerify={() =>
+    handleVerifyResolution(selectedVerificationIssue)
+  }
+  loading={verificationLoading}
+  verification={verificationResult}
+  developerFix={developerFix}
+  setDeveloperFix={setDeveloperFix}
+/>
+
     </div>
   );
 }
@@ -2366,19 +2928,20 @@ const availableStatusOptions =
 const fieldLabelStyle = {
   display: "block",
   color: "#75676a",
-  fontSize: "11px",
+  fontSize: "10px",
   fontWeight: "700",
-  marginBottom: "5px",
+  marginBottom: "3px",
 };
 
 const selectStyle = {
   width: "100%",
-  padding: "9px",
-  borderRadius: "8px",
+  padding: "7px 9px",
+  borderRadius: "7px",
   border: "1px solid #d8c7c3",
-  marginBottom: "12px",
+  marginBottom: "7px",
   background: "#ffffff",
   color: "#4b3b3f",
+  fontSize: "13px",
 };
 
 const badgeStyle = {
@@ -2410,3 +2973,14 @@ const secondaryButtonStyle = {
   fontWeight: "700",
   cursor: "pointer",
 };
+
+const compactActionButtonStyle = {
+  width: "100%",
+  padding: "8px 6px",
+  border: "none",
+  borderRadius: "7px",
+  fontWeight: "600",
+  fontSize: "13px",
+  cursor: "pointer",
+};
+

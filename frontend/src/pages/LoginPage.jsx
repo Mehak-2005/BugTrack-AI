@@ -114,8 +114,8 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <h2>BugTrack AI</h2>
-              <span>Bug Management</span>
+              <h2>DefectIQ</h2>
+              <span>Intelligent Defect Management</span>
             </div>
           </div>
 
@@ -124,7 +124,7 @@ export default function LoginPage() {
           <div className="login-hero-content">
 
             <div className="login-badge">
-              Smart Issue Management
+              AI-POWERED DEFECT MANAGEMENT
             </div>
 
             <h1>
@@ -141,7 +141,7 @@ export default function LoginPage() {
           </div>
 
           <p className="login-hero-footer">
-            BugTrack AI • Bug Lifecycle Management
+            DefectIQ • Intelligent Defect Resolution
           </p>
 
         </section>
