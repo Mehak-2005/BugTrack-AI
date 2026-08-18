@@ -1,28 +1,18 @@
-## DefectIQ — Intelligent Defect Management System ## 
+## 🐞 DefectIQ — Intelligent Defect Management System ##
 
-An AI-powered software defect management platform for reporting, organizing, assigning, resolving, testing, and verifying software defects.
+AI-powered defect tracking, team collaboration, sprint planning, and intelligent resolution assistance.
 
-DefectIQ transforms traditional bug tracking into a structured engineering workflow by combining defect lifecycle management, team collaboration, sprint planning, workload-aware assignment, and AI-assisted engineering features.
+DefectIQ is a full-stack software defect management platform designed to help development and QA teams manage the complete defect lifecycle from reporting to verification.
 
-## 📌 Project Overview ##
+The project is developed incrementally through milestones.
 
-Software teams often lose time because defect information, team assignments, testing activities, and resolution discussions are spread across different tools.
-
-DefectIQ brings these activities into one workspace.
-
-## Core workflow ##
-
-Report → Triage → Prioritize → Assign → Plan → Resolve → Test → Verify → Close → Track History
-
-The project is implemented through milestones:
-
-Milestone
+## Milestone ## 
 
 Focus
 
 Status
 
-## Milestone 1 ## 
+ Milestone 1 
 
 Core defect-management foundation
 
@@ -30,81 +20,271 @@ Core defect-management foundation
 
 Milestone 2
 
-Intelligent defect management, team workflow, sprint planning and AI assistance
+Intelligent defect management, team workflow, sprint planning, and AI assistance
 
 ✅ Completed
 
 Milestone 3
 
-Analytics, CI/CD, AI code review and AI fix suggestions
+Analytics, CI/CD, AI code review, and AI fix suggestions
 
 🔜 Planned
 
-🎯 Objectives
+📌 Table of Contents
 
-## DefectIQ is designed to:  ## 
+Project Overview
 
-Provide a centralized workspace for software defects.
+Problem Statement
+
+Objectives
+
+Key Features
+
+Milestone 1
+
+Milestone 2
+
+End-to-End Workflow
+
+AI Features
+
+Technology Stack
+
+System Architecture
+
+Project Structure
+
+Installation and Setup
+
+Environment Variables
+
+Running the Application
+
+Demo Workflow
+
+Screenshots
+
+Milestone Comparison
+
+Future Scope
+
+Project Status
+
+Author
+
+## 📖 Project Overview ## 
+
+DefectIQ provides a centralized workspace where software teams can:
+
+Create and manage software defects
+
+Organize defects by category, priority, and severity
+
+Track defects through a controlled lifecycle
+
+Manage team members, skills, experience, and workload
+
+Assign defects to suitable team members
+
+Plan defect-related work using sprints
+
+Add comments and attachments
+
+Maintain an activity and audit history
+
+Search and filter defects
+
+Use AI to understand, classify, compare, resolve, test, and verify defects
+
+The goal is to move beyond a basic bug tracker and provide an intelligent engineering workflow.
+
+## 🎯 Problem Statement ## 
+
+Traditional defect tracking systems often require developers, testers, and project managers to perform many activities manually.
+
+Common challenges include:
+
+Unstructured defect reports
+
+Manual priority and severity decisions
+
+Difficulty identifying duplicate defects
+
+Repeated investigation of similar issues
+
+Difficulty selecting the right team member for a defect
+
+Limited visibility into team workload
+
+Manual sprint planning
+
+Time-consuming test-case preparation
+
+Limited assistance during defect resolution
+
+Poor traceability across the defect lifecycle
+
+DefectIQ addresses these challenges by combining structured defect management, team collaboration, workflow management, and AI-assisted engineering features in one platform.
+
+## 🎯 Objectives ##
+
+The main objectives of DefectIQ are to:
+
+Provide a centralized defect-management workspace.
 
 Create a controlled and traceable defect lifecycle.
 
-Capture structured defect information.
+Separate priority and severity for better defect classification.
 
-Separate priority from severity.
+Improve collaboration between developers, QA engineers, testers, and project managers.
 
-Improve collaboration between developers, testers and project managers.
+Manage team members using role, skills, experience, and workload.
 
-Manage team members using role, skills, experience and workload.
+Support sprint-based defect planning.
 
-Organize defect work using sprints.
+Use AI to assist with defect triage and understanding.
 
-Reduce manual triage and investigation effort using AI.
+Detect semantically similar or duplicate defects.
 
-Generate useful testing and resolution assistance.
+Provide AI-assisted resolution guidance.
 
-Recommend suitable team members for specific defects.
+Generate useful test cases from defect information.
 
-Maintain an activity history for traceability and auditing.
+Recommend suitable developers or team members.
 
-## 🐞 Milestone 1 — Core Defect Management Foundation ## 
+Verify whether a proposed resolution addresses the defect.
 
-Milestone 1 establishes the complete foundation required to create and manage software defects.
+Maintain an activity history for traceability.
 
-1. Authentication & Protected Access
+## 🚀 Key Features ## 
 
-The system provides authenticated access to the application and protects user-specific project and defect information.
+🐞 Defect Management
 
-Purpose:
+Structured issue creation
 
-Secure access to the platform.
+Defect title and description
 
-Associate created data with the logged-in user.
+Project association
 
-Restrict team/project information to the appropriate owner.
+Category classification
+
+Affected module information
+
+Priority management
+
+Severity management
+
+Status-based defect views
+
+Search and filtering
+
+Defect lifecycle tracking
+
+👥 Team Management
+
+Add and manage team members
+
+Role-based team information
+
+Skill tracking
+
+Experience tracking
+
+Workload tracking
+
+Assigned-task visibility
+
+Team-member task assignment
+
+🔄 Workflow Management 
+
+Controlled defect lifecycle
+
+Status transitions
+
+Assignment workflow
+
+Sprint planning
+
+Resolution workflow
+
+Testing and verification
+
+Activity history and traceability
+
+🤝 Collaboration
+
+Comments on defects
+
+Attachments
+
+Activity history
+
+Assigned-task visibility
+
+Team workload visibility
+
+🤖 AI-Assisted Engineering
+
+AI defect analysis
+
+AI-assisted triage
+
+Semantic duplicate detection
+
+AI resolution assistance
+
+AI-generated test cases
+
+Developer/team-member recommendation
+
+AI resolution verification
+
+## 🏗️ Milestone 1 — Core Defect Management Foundation ## 
+
+Status: ✅ Completed
+
+Milestone 1 established the foundation of DefectIQ.
+
+The focus was on creating a structured platform where projects, team members, and defects could be managed in a centralized workspace.
+
+1. Authentication and User Access
+
+Milestone 1 provides the basic user-access foundation required for the application.
+
+Users can access the system through the authentication flow and work with their project and defect data.
 
 2. Project Management
 
-Projects provide the main workspace in which defects are organized.
+Projects provide the organizational structure for defects.
 
-Project capabilities
+The system supports:
 
-Create projects.
+Project creation
 
-Store project information.
+Project information
 
-Associate defects with projects.
+Project-based defect organization
 
-View project-related defect information.
+Project association with issues
 
-3. Structured Defect Creation
+This allows defects to be managed within the correct project context.
 
-Users can create defects with meaningful information instead of storing only a title.
+3. Dashboard
 
-Defect information includes
+The dashboard provides a centralized overview of project and defect information.
 
-Issue title
+It helps users understand the current state of the system without opening every individual defect.
+
+4. Defect / Issue Creation
+
+Users can create structured defects with information such as:
+
+Title
 
 Description
+
+Project
 
 Category
 
@@ -114,91 +294,61 @@ Severity
 
 Affected module
 
+This converts an unstructured bug report into a manageable engineering issue.
+
+5. Priority and Severity
+
+DefectIQ treats priority and severity as separate concepts.
+
+Priority
+
+Priority represents the business importance and urgency of the defect.
+
+Supported levels include:
+
+Critical
+
+High
+
+Medium
+
+Low
+
+Severity
+
+Severity represents the technical or user impact of the defect.
+
+Supported levels include:
+
+Critical
+
+High
+
+Medium
+
+Low
+
+Keeping these values separate gives teams more flexibility when deciding which defects require immediate attention.
+
+6. Defect Search and Filtering
+
+The issues workspace supports searching and filtering defects using information such as:
+
+Title
+
+Description
+
+Category
+
 Project
 
-Reporter
+Priority
 
-Status
+This becomes increasingly useful as the number of tracked defects grows.
 
-This structured information also becomes the foundation for the AI features introduced in Milestone 2.
+7. Team Member Management
 
-4. Defect Dashboard & Issue Management
-
-The issue workspace provides an organized view of defects.
-
-Supported capabilities
-
-View defects.
-
-Search defects.
-
-Filter defects.
-
-View issues according to their status.
-
-View priority and severity.
-
-Open individual issue details.
-
-Access AI actions from issue cards.
-
-5. Priority Management
-
-Defects can be assigned a priority based on business urgency.
-
-Priority levels
-
-Critical
-
-High
-
-Medium
-
-Low
-
-Priority answers:
-
-How urgently should the team handle this issue?
-
-6. Severity Management
-
-Severity represents the impact of the defect.
-
-Severity levels
-
-Critical
-
-High
-
-Medium
-
-Low
-
-Severity answers:
-
-How seriously does this defect affect the system or user?
-
-Priority vs Severity
-
-DefectIQ intentionally keeps these concepts separate.
-
-For example:
-
-A defect can have High severity because it affects an important feature, while its priority may be Medium because there is a temporary workaround.
-
-7. Defect Status Management
-
-The platform provides status-based issue organization.
-
-The controlled lifecycle is expanded in Milestone 2 to:
-
-Reported → Assigned → In Progress → In Review → Resolved → Verified → Closed
-
-8. Team Member Management
-
-Milestone 1 establishes team-member information used later for intelligent assignment.
-
-Team members can have:
+The platform stores important information about team members, including:
 
 Name
 
@@ -212,97 +362,73 @@ Experience
 
 Workload
 
-Assigned tasks
+This information becomes important for intelligent assignment in Milestone 2.
 
-Example roles include:
+8. Comments
 
-Frontend Developer
+Comments allow team members to communicate within the context of a defect.
 
-Backend Developer
+This helps keep technical discussion connected to the issue instead of spreading information across different communication channels.
 
-QA Engineer
+9. Attachments
 
-Tester
+Defects can contain supporting attachments.
 
-Project Manager
+Attachments can provide additional context such as:
 
-9. Comments & Attachments
+Screenshots
 
-Defects can contain supporting collaboration information.
+Documents
 
-Comments
+Supporting files
 
-Used to keep discussions directly connected to the defect.
-
-Attachments
-
-Used to associate supporting files or evidence with an issue.
+Evidence related to the defect
 
 10. Activity History
 
-Important actions can be recorded in an activity/audit history.
+Important issue actions are recorded in activity history.
 
-This improves:
+This provides traceability and helps users understand what happened to a defect over time.
 
-Traceability
+11. Milestone 1 Result
 
-Accountability
+At the end of Milestone 1, DefectIQ provided a structured foundation for:
 
-Debugging of workflow changes
+Projects → Defects → Team Members → Collaboration → Activity Tracking
 
-Understanding of what happened to a defect
+This foundation enabled the intelligent workflow introduced in Milestone 2.
 
-11. AI-Assisted Bug Reporting Foundation
+## 🧠 Milestone 2 — Intelligent Defect Management ## 
 
-Milestone 1 establishes the initial AI-assisted defect analysis foundation, which is expanded significantly in Milestone 2.
+Status: ✅ Completed
 
-## 🧠 Milestone 2 — Intelligent Defect Management ##
+Milestone 2 extends the foundation of DefectIQ by connecting defect management, team workflow, sprint planning, and AI-assisted engineering.
 
-Milestone 2 builds on the Milestone 1 foundation and adds an intelligent engineering workflow.
+The main transformation is:
 
-The focus is:
+From simple bug tracking → to intelligent defect management.
 
-From simply tracking defects → to helping teams understand, assign, resolve, test and verify them.
+1. Controlled Defect Lifecycle
 
-🔄 1. Controlled Defect Lifecycle
+Defects move through a structured lifecycle:
 
-Milestone 2 introduces a clearly defined defect workflow:
-
-Reported
-   ↓
-Assigned
-   ↓
-In Progress
-   ↓
-In Review
-   ↓
-Resolved
-   ↓
-Verified
-   ↓
-Closed
-
-Status definitions
-
-Status
-
-Meaning
+Reported → Assigned → In Progress → In Review → Resolved → Verified → Closed
 
 Reported
 
-A new defect has been created.
+A new defect is created and recorded.
 
 Assigned
 
-An owner has been selected.
+An appropriate team member becomes responsible for the issue.
 
 In Progress
 
-Development/investigation is taking place.
+Development or testing work begins.
 
 In Review
 
-The completed work is being reviewed.
+The completed work is reviewed.
 
 Resolved
 
@@ -310,39 +436,19 @@ The fix has been completed.
 
 Verified
 
-QA/testing has validated the fix.
+The fix has been validated.
 
 Closed
 
 The defect lifecycle is complete.
 
-This prevents uncontrolled status changes and makes the defect lifecycle easier to understand.
+This controlled lifecycle improves consistency and traceability.
 
-⭐ 2. Priority & Severity Workflow
+2. Assignment and Workload Management
 
-Milestone 2 makes priority and severity meaningful parts of the defect workflow.
+Milestone 2 introduces team-aware assignment.
 
-Priority
-
-Critical → High → Medium → Low
-
-Used to communicate urgency and business impact.
-
-Severity
-
-Critical → High → Medium → Low
-
-Used to communicate technical/user impact.
-
-Together they help the team decide:
-
-What needs attention first, and how serious is the impact?
-
-👥 3. Team Assignment & Workload Management
-
-Milestone 2 adds actual assignment and workload visibility.
-
-Each team member can have:
+Team members have information such as:
 
 Role
 
@@ -354,29 +460,101 @@ Current workload
 
 Assigned tasks
 
-Assignment flow
+The system can use this information when recommending a suitable person for a defect.
 
-Defect
-  ↓
-Select Team Member
-  ↓
-Assign Issue
-  ↓
-Task Added to Member
-  ↓
-Workload Recalculated
+This helps avoid assigning work without considering the person's responsibilities or expertise.
 
-This helps prevent assignments from being made without considering the existing workload.
+3. Sprint Planning
 
-🤖 4. AI Developer / Team-Member Recommendation
+Defects can be organized into sprint-based work.
 
-One of the key Milestone 2 features is intelligent developer recommendation.
+Sprint planning helps teams:
 
-The recommendation considers information such as:
+Select work for a sprint
 
-Issue title
+Organize defect-related tasks
 
-Issue description
+Track planned work
+
+Manage sprint status
+
+This connects individual defects with a broader development workflow.
+
+4. AI-Assisted Defect Triage
+
+AI analyzes the information contained in a defect to help the engineering team understand it.
+
+The AI workflow can consider:
+
+Title
+
+Description
+
+Category
+
+Severity
+
+Priority
+
+Affected module
+
+The goal is to transform a raw defect report into more actionable engineering information.
+
+5. Semantic Duplicate Detection
+
+DefectIQ can identify defects that are semantically similar rather than relying only on exact text matches.
+
+This helps reduce:
+
+Duplicate investigation
+
+Repeated debugging
+
+Redundant issue creation
+
+The system can use related defect history to provide additional context.
+
+6. AI Resolution Assistance
+
+The platform provides AI-assisted guidance for resolving defects.
+
+The AI can analyze the defect context and provide:
+
+Possible causes
+
+Suggested resolution approaches
+
+Engineering guidance
+
+Relevant reasoning based on the available issue information
+
+The purpose is to assist developers rather than automatically make the final engineering decision.
+
+7. AI-Generated Test Cases
+
+DefectIQ can generate test cases from defect information.
+
+Generated tests can help QA engineers validate:
+
+The reported scenario
+
+The expected behavior
+
+The corrected behavior
+
+Related regression scenarios
+
+This reduces the amount of manual preparation required for common validation tasks.
+
+8. AI Developer Recommendation
+
+One of the important Milestone 2 features is intelligent developer/team-member recommendation.
+
+The recommendation considers:
+
+Defect title
+
+Description
 
 Category
 
@@ -388,395 +566,322 @@ Affected module
 
 Team-member skills
 
-Experience
+Team-member experience
 
-Workload
+Current workload
 
-Example
-
-Defect:
-
-Discount coupon validation fails during checkout.
-
-AI recommendation:
-
-Rahul Kumar — QA Engineer — 95% Match
-
-Why?
-
-The issue requires:
-
-Validation
-
-Regression testing
-
-Test-case creation
-
-Verification of checkout calculations
-
-Rahul's QA-related skills make him a suitable candidate.
-
-The recommendation is an AI-assisted suggestion, not an automatic final decision.
-
-🧩 5. Semantic Duplicate Detection
-
-Traditional duplicate detection may depend heavily on matching words.
-
-DefectIQ introduces semantic similarity so that defects with different wording but similar meaning can be identified.
+The system returns a recommended team member along with an explanation of why that person is a suitable match.
 
 Example
 
-Issue A
+A defect involving checkout coupon validation may require strong testing and test-case skills.
 
-Payment button crashes during checkout.
+If Rahul Kumar is a QA Engineer with:
 
-Issue B
+Manual Testing
 
-Checkout payment action causes the application to crash.
+Selenium
 
-Although the wording is different, the underlying problem is similar.
+API Testing
 
-Benefit
+Test Case Design
 
-Reduces repeated investigation.
+the AI can recommend Rahul as a suitable person for the defect.
 
-Helps identify existing solutions.
+9. AI Resolution Verification
 
-Saves engineering time.
+After a resolution is proposed, the system can assist in verifying the resolution.
 
-Keeps the defect database cleaner.
+Verification can help determine whether:
 
-🧠 6. AI-Assisted Defect Triage
+The proposed resolution addresses the reported issue
 
-AI can analyze the available defect context to help the team understand a newly reported issue.
+The expected behavior is covered
 
-The analysis can use:
+Additional validation may be required
 
-Title
+This creates an important connection between:
 
-Description
+Resolution → Testing → Verification
 
-Category
+10. Search and Filtering
 
-Severity
+Milestone 2 continues the issue-search functionality and makes it more useful for larger defect collections.
 
-Priority
+Users can locate relevant defects using searchable issue information and available filters.
 
-Affected module
+11. Activity and Audit Traceability
 
-Triage workflow
+Milestone 2 strengthens traceability by recording meaningful workflow actions.
 
-New Defect
-    ↓
-Understand Context
-    ↓
-Classify / Analyze
-    ↓
-Identify Relevant Information
-    ↓
-Support Engineering Decision
+This allows teams to understand:
 
-🔧 7. AI Resolution Assistance
+Who performed an action
 
-DefectIQ provides AI-assisted resolution guidance.
+What happened
 
-The system can use the defect context to suggest:
+When the action occurred
 
-Possible causes
+How the defect moved through its lifecycle
 
-Areas that may require investigation
+## 🔗 End-to-End Workflow ## 
 
-Possible resolution approaches
+Milestone 2 connects the individual features into one engineering workflow:
 
-Engineering considerations
+Report
+↓
+Create defect
 
-The developer reviews the suggestions before applying any change.
+Triage
+↓
+AI-assisted understanding
 
-🧪 8. AI-Generated Test Cases
+Similarity
+↓
+Find related or duplicate defects
 
-Milestone 2 provides AI-generated testing assistance.
+Assignment
+↓
+Use skills, experience, and workload
 
-For example, for:
+Sprint
+↓
+Plan the work
 
-Discount coupon validation fails during checkout
-
-AI can help generate scenarios such as:
-
-TC01 — Apply a valid coupon
-Expected: Correct discounted total.
-
-TC02 — Apply an expired coupon
-Expected: Coupon should be rejected.
-
-TC03 — Apply a coupon below the minimum purchase amount
-Expected: Coupon should not be applied.
-
-TC04 — Remove an applied coupon
-Expected: Original order total should be restored.
-
-TC05 — Apply multiple/invalid coupon combinations
-Expected: The system should follow the defined coupon rules.
-
-Benefit
-
-QA engineers can use the generated cases as a starting point for validation and regression testing.
-
-👨‍💻 9. Recommended Developer / QA Assignment
-
-The platform supports intelligent assignment for different engineering roles.
-
-For example:
-
-Development defect
-
-A backend API defect can be matched with a backend developer based on relevant skills.
-
-Testing defect
-
-A defect requiring regression testing can be recommended to a QA engineer.
-
-This makes assignment more meaningful than simply selecting the first available team member.
-
-✅ 10. AI Resolution Verification
-
-After a fix is completed, DefectIQ supports AI-assisted verification.
-
-Workflow
-
-Defect
-  ↓
-Resolution Assistance
-  ↓
-Generate Test Cases
-  ↓
-Fix Implemented
-  ↓
-Test / Validate
-  ↓
-AI Resolution Verification
-  ↓
-Verified
-  ↓
-Closed
-
-The final validation remains the responsibility of the engineering/QA team.
-
-💬 11. Comments, Attachments & Activity History
-
-Milestone 2 strengthens collaboration around defects.
-
-Comments
-
-Keep technical discussion with the issue.
-
-Attachments
-
-Keep evidence and supporting files with the issue.
-
-Activity History
-
-Records meaningful changes and actions for traceability.
-
-This creates a single source of context for the defect.
-
-🏃 12. Sprint Planning
-
-Milestone 2 introduces sprint-based organization of defect work.
-
-Sprint planning helps teams
-
-Group work into time-bound cycles.
-
-Plan defect resolution.
-
-Organize assigned tasks.
-
-Improve visibility of planned work.
-
-Connect defect management with development planning.
-
-Workflow
-
-Defect
-   ↓
-Assign
-   ↓
-Add to Sprint
-   ↓
-Plan Work
-   ↓
 Resolve
-   ↓
+↓
+Use AI-assisted resolution guidance
+
 Test
-   ↓
+↓
+Generate and execute validation scenarios
+
 Verify
+↓
+Confirm the resolution
 
-🔍 13. Search & Filtering
+History
+↓
+Maintain traceability
 
-The issue workspace supports finding relevant defects through:
+## Final Outcome ## 
 
-Title
+A defect becomes an actionable engineering workflow instead of remaining only as a bug record.
 
-Description
+🤖 AI Features
 
-Category
+DefectIQ uses AI as an engineering assistant.
 
-Project
+AI Pipeline
 
-Priority
+The Milestone 2 AI flow can be summarized as:
 
-This becomes especially useful as the number of tracked defects increases.
+Defect Report → Triage → Similarity → Resolution → Test Generation → Verification
 
-## 🔗 End-to-End Milestone 2 Workflow ## 
+AI Capabilities
 
-Milestone 2 connects the features into one complete workflow:
+AI Feature
 
-┌─────────┐
-│ Report  │
-└────┬────┘
-     ↓
-┌─────────┐
-│ Triage  │  ← AI-assisted understanding
-└────┬────┘
-     ↓
-┌────────────┐
-│ Similarity │  ← Detect related/duplicate issues
-└────┬───────┘
-     ↓
-┌────────┐
-│ Assign │  ← Skills + experience + workload
-└────┬───┘
-     ↓
-┌────────┐
-│ Sprint │  ← Plan work
-└────┬───┘
-     ↓
-┌─────────┐
-│ Resolve │  ← AI resolution assistance
-└────┬────┘
-     ↓
-┌────────┐
-│  Test  │  ← AI-generated test cases
-└────┬───┘
-     ↓
-┌────────┐
-│ Verify │  ← Resolution verification
-└────┬───┘
-     ↓
-┌─────────┐
-│ History │  ← Full traceability
-└─────────┘
+Purpose
 
-## 🧑‍🔬 Human-in-the-Loop AI ## 
+AI Defect Analysis
+
+Understand defect information
+
+AI Triage
+
+Assist with defect classification and understanding
+
+Semantic Similarity
+
+Find related or duplicate issues
+
+Resolution Assistance
+
+Suggest possible causes and fixes
+
+Test Generation
+
+Generate test scenarios from defects
+
+Developer Recommendation
+
+Match defects with suitable team members
+
+Resolution Verification
+
+Assist in validating proposed resolutions
+
+👤 Human-in-the-Loop AI
 
 DefectIQ follows a human-in-the-loop approach.
 
 AI recommendations are intended to assist engineers rather than replace engineering judgment.
 
-AI can assist with
+The final decision remains with the responsible developer, tester, QA engineer, or project manager.
 
-Triage
+AI assists with:
 
-Similarity analysis
+Understanding defects
 
-Resolution suggestions
+Finding similar issues
 
-Test-case generation
+Suggesting possible resolutions
 
-Team-member recommendation
+Generating test cases
 
-Resolution verification
+Recommending suitable team members
 
-Humans remain responsible for
+Supporting verification
 
-Reviewing AI output
+Humans remain responsible for:
 
-Selecting the final assignee
+Reviewing recommendations
 
-Approving resolution decisions
+Modifying suggested actions
 
-Reviewing generated test cases
+Approving assignments
 
-Validating fixes
+Implementing fixes
 
-Closing defects
+Validating test results
 
-AI accelerates the workflow; engineers make the final decisions.
-
-## 🏗️ System Architecture ## 
-
-                    ┌──────────────────────┐
-                    │      React + Vite    │
-                    │       Frontend       │
-                    └──────────┬───────────┘
-                               │
-                               │ REST API
-                               ↓
-                    ┌──────────────────────┐
-                    │  Node.js + Express   │
-                    │       Backend        │
-                    └───────┬───────┬──────┘
-                            │       │
-                 ┌──────────┘       └──────────┐
-                 ↓                             ↓
-       ┌──────────────────┐          ┌──────────────────┐
-       │ MongoDB +        │          │ Gemini AI        │
-       │ Mongoose         │          │ Service          │
-       └──────────────────┘          └──────────────────┘
+Making the final engineering decision
 
 ## 🛠️ Technology Stack ## 
-
-Layer
-
-Technology
 
 Frontend
 
 React.js
 
-Build Tool
-
 Vite
+
+JavaScript
+
+HTML
+
+CSS
 
 Backend
 
 Node.js
 
-Server Framework
-
 Express.js
+
+REST APIs
 
 Database
 
 MongoDB
 
-ODM
-
 Mongoose
-
-API Style
-
-REST API
 
 AI
 
-Google Gemini
+Google Gemini API
+
+Gemini-based AI service integration
+
+Development Tools
+
+Visual Studio Code
+
+Git
+
+GitHub
+
+npm
+
+## 🏛️ System Architecture ## 
+
+DefectIQ follows a full-stack architecture:
+
+React Frontend
+       │
+       │ REST API
+       ▼
+Express.js Backend
+       │
+       ├── Controllers
+       ├── Routes
+       ├── Middleware
+       └── Services
+       │
+       ├──────────────► MongoDB
+       │
+       └──────────────► Gemini AI
+
+Frontend
+
+Responsible for:
+
+User interface
+
+Dashboards
+
+Issue management
+
+Team management
+
+Sprint management
+
+AI result presentation
+
+Backend
+
+Responsible for:
+
+API endpoints
 
 Authentication
 
-JWT / authentication middleware
+Business logic
 
-Version Control
+Issue management
 
-Git & GitHub
+Team assignment
 
-Development
+Sprint operations
 
-VS Code
+AI service integration
+
+Database
+
+MongoDB stores application information such as:
+
+Users
+
+Projects
+
+Issues
+
+Team members
+
+Sprints
+
+Comments
+
+Attachments
+
+Activity records
+
+AI Service
+
+The Gemini service provides AI-assisted capabilities such as:
+
+Defect analysis
+
+Resolution assistance
+
+Test generation
+
+Developer recommendation
+
+Resolution verification
 
  ## 📁 Project Structure ## 
 
- BugTrack-AI/
+BugTrack-AI/
 │
 ├── backend/
 │   ├── config/
@@ -791,17 +896,17 @@ VS Code
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
-│   │   ├── services/
-│   │   └── ...
+│   │   └── services/
 │   ├── package.json
 │   └── vite.config.js
 │
 ├── screenshots/
 │
 ├── .gitignore
-└── README.md 
+├── README.md
+└── package files
 
-⚙️ Installation & Setup
+## ⚙️ Installation and Setup ##
 
 Prerequisites
 
@@ -815,143 +920,164 @@ MongoDB
 
 Git
 
-A Gemini API key is required for AI functionality.
+A Gemini API key for AI functionality
 
-1. Clone the repository
+1. Clone the Repository
 
-git clone https://github.com/Mehak-2005/BugTrack-AI
+git clone https://github.com/Mehak-2005/BugTrack-AI.git
 
 cd BugTrack-AI
 
-2. Install backend dependencies
+2. Install Backend Dependencies
 
 cd backend
+
 npm install
 
-Create a .env file inside backend/:
+3. Install Frontend Dependencies
+
+Open another terminal:
+
+cd frontend
+
+npm install
+
+4. Configure Environment Variables
+
+Create a .env file inside the backend directory.
+
+Example:
 
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/bugtrack-ai
+MONGO_URI=mongodb://127.0.0.1:27017/defectiq
 
 GEMINI_API_KEY=your_gemini_api_key
 
 JWT_SECRET=your_secret_key
 
-Start the backend:
+Use your actual values in the local environment.
+
+Never commit API keys, passwords, or secrets to GitHub.
+
+## ▶️ Running the Application ## 
+
+Start MongoDB
+
+Make sure your local MongoDB service is running.
+
+Start Backend
+
+From the backend directory:
+
+npm start
+
+or, if the project uses a development script:
 
 npm run dev
 
-Backend:
+The backend runs on the configured port, for example:
 
 http://localhost:5000
 
-3. Install frontend dependencies
+Start Frontend
 
-Open another terminal:
+From the frontend directory:
 
-cd frontend
-npm install
 npm run dev
 
-Frontend:
+Vite will provide a local development URL, commonly:
 
 http://localhost:5173
 
-Your exact scripts or environment variable names may differ if they are defined differently in the project configuration.
+Open the displayed URL in your browser.
 
-🧪 Demonstration Scenario
+## 🧪 Demo Workflow ## 
 
-A useful Milestone 2 demonstration is the following defect.
+The following scenario can be used to demonstrate Milestone 2 to a mentor.
 
-Defect
+Sample Defect
 
 Title:
+
 Discount coupon validation fails during checkout
 
 Description:
 
-During checkout, the discount coupon is applied but the final order
-total does not match the expected discounted amount. The issue needs
-validation against the expected calculation and regression testing
-for different coupon values.
+During checkout, the discount coupon is applied but the final order total does not match the expected discounted amount. The issue requires validation against the expected calculation and regression testing for different coupon values.
 
-Priority: High
+Category:
 
-Severity: High
+Functional
 
-Category: Functional / Checkout
+Priority:
 
-Affected Module: Checkout / Payment
+High
 
-AI Recommendation
+Severity:
 
-Recommended Team Member
-------------------------
-Rahul Kumar
-Role: QA Engineer
-Match: 95%
+High
 
-Reason
+Affected Module:
 
-The defect requires:
+Checkout / Coupon Validation
 
-Calculation validation
+Expected AI Workflow
 
-Regression testing
+Step 1 — Create Defect
 
-Test-case creation
+Create the issue using the sample information.
 
-Checkout verification
+Step 2 — Analyze the Defect
 
-Rahul's QA skills make him a strong candidate.
+Use the AI analysis functionality to understand and classify the issue.
 
-Demonstration Flow
+Step 3 — Find Similar Issues
 
-Create Defect
-     ↓
-AI Triage
-     ↓
-Check Similar Defects
-     ↓
-Recommend Team Member
-     ↓
-Assign Rahul Kumar
-     ↓
-Add to Sprint
-     ↓
-Generate Test Cases
-     ↓
-Resolve Defect
-     ↓
-Verify Resolution
-     ↓
-Close Defect
+Use semantic similarity to check whether related coupon or checkout defects already exist.
 
-🔐 Security & Configuration
+Step 4 — Recommend a Team Member
 
-Never commit secrets to GitHub.
+Use Recommend Developer.
 
-Your .gitignore should include:
+For a QA-oriented defect, the system can identify a team member whose skills and workload make them suitable.
 
-node_modules/
-.env
-.env.*
+Step 5 — Assign the Defect
 
-Keep API keys, database credentials and JWT secrets inside environment variables.
+Assign the recommended team member.
 
-📸 Screenshots
+Step 6 — Add to Sprint
 
-The repository contains a screenshots/ directory for application screenshots.
+Place the issue into the appropriate sprint.
 
-Recommended screenshots for documentation:
+Step 7 — Generate Test Cases
+
+Use Generate Test Cases to create validation scenarios for different coupon values and checkout conditions.
+
+Step 8 — Resolve
+
+Use the AI Resolution feature for possible causes and resolution guidance.
+
+Step 9 — Verify Resolution
+
+Use Verify Resolution after the fix to assist with validating whether the defect has been addressed.
+
+Step 10 — Check Activity History
+
+Open Activity History to demonstrate the traceability of the defect throughout the workflow.
+
+## 📸 Screenshots ## 
+
+Project screenshots can be stored in the screenshots/ directory.
+
+Recommended screenshots for the GitHub repository include:
 
 Dashboard
 
-Projects
+Project Management
 
-Issues
+Issue Creation
 
-Create Issue
+Issues Board
 
 Team Members
 
@@ -959,7 +1085,9 @@ Assigned Tasks
 
 Sprint Planning
 
-AI Developer Recommendation
+AI Defect Analysis
+
+Recommended Developer
 
 AI Resolution Assistance
 
@@ -969,66 +1097,141 @@ Resolution Verification
 
 Activity History
 
+Example Markdown:
+
+![Dashboard](screenshots/dashboard.png)
+
+
+## 📈 What Milestone 2 Adds ## 
+
+Before Milestone 2
+
+The platform provided a structured foundation for creating and managing projects, defects, teams, and collaboration.
+
+After Milestone 2
+
+The platform becomes a more complete engineering workflow with:
+
+Controlled defect lifecycle
+
+Team-aware assignment
+
+Workload visibility
+
+Sprint planning
+
+AI-assisted triage
+
+Semantic similarity detection
+
+Resolution assistance
+
+Test-case generation
+
+Developer recommendation
+
+Resolution verification
+
+Stronger traceability
+
+Engineering Value
+
+Milestone 2 aims to provide:
+
+Less manual triage
+
+Less duplicate investigation
+
+Better team-member matching
+
+Faster defect understanding
+
+Faster resolution assistance
+
+Better validation
+
+Stronger defect traceability
+
 ## 🔮 Future Scope — Milestone 3 ## 
 
-The planned next stage can extend DefectIQ with:
+Milestone 3 is planned to extend DefectIQ with additional engineering intelligence.
 
-📊 Analytics & Metrics
+Planned areas include:
 
-Defect trends
+Analytics and engineering metrics
 
-Resolution-time metrics
-
-Team workload analytics
-
-Sprint performance
-
-Priority/severity distribution
-
-Quality dashboards
-
-🔁 CI/CD Integration
-
-Pipeline integration
-
-Automated defect creation from build/test failures
-
-Test failure tracking
-
-Continuous quality monitoring
-
-🤖 Advanced AI
+CI/CD integration
 
 AI code review
 
 AI fix suggestions
 
-Improved root-cause analysis
+Advanced project insights
 
-Intelligent defect prioritization
+Additional automation around the defect lifecycle
 
-Historical defect learning
+These features are planned future enhancements and are not represented as completed Milestone 1 or Milestone 2 functionality.
 
-📈 Project Status
+## 🔐 Security Notes ## 
 
-Milestone 1  ████████████████████ 100%  ✅
+Keep API keys in environment variables.
 
-Milestone 2  ████████████████████ 100%  ✅
+Do not commit .env files.
 
-Milestone 3  ░░░░░░░░░░░░░░░░░░░░ Planned
+Do not expose database credentials.
+
+Use .gitignore for sensitive configuration.
+
+Authentication and authorization should be enforced on protected API routes.
+
+## 📌 Project Status ## 
+
+Area
+
+Status
+
+Milestone 1
+
+✅ Completed
+
+Milestone 2
+
+✅ Completed
+
+Milestone 3
+
+🔜 Planned
+
+Frontend
+
+✅ Implemented
+
+Backend
+
+✅ Implemented
+
+MongoDB Integration
+
+✅ Implemented
+
+Gemini AI Integration
+
+✅ Implemented
 
 ## 👩‍💻 Author ## 
 
 Mehak
-BE — Computer Science Engineering
 
-Project: DefectIQ — Intelligent Defect Management System
-Repository: BugTrack-AI
+Computer Science Engineering Student
 
-<div align="center">
+GitHub: Mehak-2005
 
-🐞 DefectIQ
+## ⭐ Project Summary ## 
 
-Track smarter. Collaborate better. Resolve faster.
+DefectIQ transforms traditional defect tracking into an intelligent engineering workflow.
 
-</div>
+It combines:
+
+Defect Management + Team Collaboration + Sprint Planning + AI Assistance + Testing + Verification + Traceability
+
+The completed Milestone 1 and Milestone 2 provide the foundation for evolving DefectIQ into a more intelligent software engineering platform.
