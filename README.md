@@ -10,7 +10,7 @@ Software teams often lose time because defect information, team assignments, tes
 
 DefectIQ brings these activities into one workspace.
 
-## Core workflow##
+## Core workflow ##
 
 Report → Triage → Prioritize → Assign → Plan → Resolve → Test → Verify → Close → Track History
 
