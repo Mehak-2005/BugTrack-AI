@@ -776,7 +776,7 @@ VS Code
 
  ## 📁 Project Structure ## 
 
-BugTrack-AI/
+ BugTrack-AI/
 │
 ├── backend/
 │   ├── config/
@@ -799,7 +799,7 @@ BugTrack-AI/
 ├── screenshots/
 │
 ├── .gitignore
-└── README.md
+└── README.md 
 
 ⚙️ Installation & Setup
 
@@ -819,7 +819,8 @@ A Gemini API key is required for AI functionality.
 
 1. Clone the repository
 
-git clone https://github.com/Mehak-2005/BugTrack-AI.git
+git clone https://github.com/Mehak-2005/BugTrack-AI
+
 cd BugTrack-AI
 
 2. Install backend dependencies
@@ -831,7 +832,9 @@ Create a .env file inside backend/:
 
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/bugtrack-ai
+
 GEMINI_API_KEY=your_gemini_api_key
+
 JWT_SECRET=your_secret_key
 
 Start the backend:
@@ -1009,7 +1012,9 @@ Historical defect learning
 📈 Project Status
 
 Milestone 1  ████████████████████ 100%  ✅
+
 Milestone 2  ████████████████████ 100%  ✅
+
 Milestone 3  ░░░░░░░░░░░░░░░░░░░░ Planned
 
 ## 👩‍💻 Author ## 
