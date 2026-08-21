@@ -140,6 +140,15 @@ const issueSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+// ========================================
+// ASSIGNED DEVELOPER
+// ========================================
+
+assignedDeveloper: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "TeamMember",
+  default: null,
+},
 
     // ========================================
     // SEMANTIC SEARCH EMBEDDING

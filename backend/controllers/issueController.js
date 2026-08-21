@@ -401,6 +401,10 @@ exports.getIssues = async (
           "sprint",
           "name"
         )
+         .populate(
+      "assignedDeveloper",
+      "name role skills experience workload email"
+         )
         .sort({
           createdAt: -1,
         });
@@ -441,6 +445,7 @@ exports.saveIssue = async (
       project,
       affectedModule,
        defectType,
+       assignedDeveloper,
       skipDuplicateCheck = false
     } = req.body;
 
@@ -692,6 +697,7 @@ exports.updateIssue = async (
       sprint,
       defectType,
   affectedModule,
+  assignedDeveloper,
     } = req.body;
 
     // =================================================
@@ -832,7 +838,16 @@ exports.updateIssue = async (
 
     if (status !== undefined) {
       updateData.status = status;
-    }
+    
+}
+
+// ========================================
+// ASSIGNED DEVELOPER
+// ========================================
+if (assignedDeveloper !== undefined) {
+    updateData.assignedDeveloper =
+        assignedDeveloper || null;
+}
 
     if (priority !== undefined) {
       updateData.priority =
@@ -918,7 +933,15 @@ if (affectedModule !== undefined) {
         .populate(
           "sprint",
           "name"
-        );
+        )
+        .populate(
+      "assignedDeveloper",
+      "name role skills experience workload email"
+    )
+    .sort({
+      createdAt: -1,
+    }
+);
 
     if (!issue) {
       return res.status(404).json({

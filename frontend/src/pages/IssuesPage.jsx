@@ -288,23 +288,49 @@ const handleAssignDeveloper = async (
 
       return;
     }
+ // ==========================================
+// SAVE DEVELOPER ON THE ISSUE
+// ==========================================
 
-    // ==========================================
-    // ASSIGN ISSUE
-    // ==========================================
+const res = await axios.put(
+  `http://localhost:5000/api/issues/${issue._id}`,
+  {
+    assignedDeveloper: member._id,
+  },
+  getAuthConfig()
+);
 
-    await assignIssueToTeamMember(
-      member._id,
-      {
-        issueId: issue._id,
-        title:
-          issue.title ||
-          "Untitled Issue",
-        priority:
-          issue.priority ||
-          "Medium",
-      }
-    );
+const updatedIssue = res.data.issue || res.data;
+
+console.log("UPDATED ISSUE FROM BACKEND:", updatedIssue);
+
+// Update issue immediately in UI
+setIssues((previousIssues) =>
+  previousIssues.map((existingIssue) =>
+    existingIssue._id === issue._id
+      ? {
+          ...existingIssue,
+          ...updatedIssue,
+        }
+      : existingIssue
+  )
+);
+
+// ==========================================
+// ADD ISSUE TO DEVELOPER'S TASKS
+// ==========================================
+
+await assignIssueToTeamMember(
+  member._id,
+  {
+    issueId: issue._id,
+    title: issue.title || "Untitled Issue",
+    priority: issue.priority || "Medium",
+  }
+);
+
+// Refresh issues from backend
+await fetchIssues();
 
     // ==========================================
     // SUCCESS
@@ -1582,8 +1608,118 @@ const availableStatusOptions =
           </div>
         )}
 
+        {/* ASSIGNED DEVELOPER DISPLAY */}
+
+{issue.assignedDeveloper && (
+  <div
+    style={{
+      background: "#f4e2e5",
+      borderRadius: "8px",
+      padding: "9px 10px",
+      marginBottom: "15px",
+      color: "#702f43",
+      fontSize: "13px",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "10px",
+        fontWeight: "700",
+        textTransform: "uppercase",
+        color: "#9a7180",
+        marginBottom: "4px",
+      }}
+    >
+      Assigned Developer
+    </div>
+
+    <div
+      style={{
+        fontWeight: "700",
+        fontSize: "14px",
+      }}
+    >
+      👤 {issue.assignedDeveloper.name}
+    </div>
+
+    <div
+      style={{
+        fontSize: "11px",
+        marginTop: "3px",
+        color: "#80636d",
+      }}
+    >
+      {issue.assignedDeveloper.role}
+    </div>
+  </div>
+)}
+
         {expandedIssueDetails === issue._id && (
+
+          
   <>
+  {/* ASSIGNED DEVELOPER */}
+
+{issue.assignedDeveloper && (
+  <div
+    style={{
+      background: "#f4e2e5",
+      borderRadius: "8px",
+      padding: "9px 10px",
+      marginBottom: "15px",
+      color: "#702f43",
+      fontSize: "13px",
+    }}
+  >
+    <div
+      style={{
+        fontSize: "10px",
+        fontWeight: "700",
+        textTransform: "uppercase",
+        color: "#9a7180",
+        marginBottom: "4px",
+      }}
+    >
+      Assigned Developer
+    </div>
+
+    <div
+      style={{
+        fontWeight: "700",
+        fontSize: "14px",
+      }}
+    >
+      👤 {issue.assignedDeveloper.name}
+    </div>
+
+    <div
+      style={{
+        fontSize: "11px",
+        marginTop: "3px",
+        color: "#80636d",
+      }}
+    >
+      {issue.assignedDeveloper.role}
+    </div>
+  </div>
+)}
+
+{issue.project?.projectName && (
+  <div
+    style={{
+      background: "#f8eeeb",
+      borderRadius: "8px",
+      padding: "9px 10px",
+      color: "#705d61",
+      fontSize: "13px",
+      marginBottom: "15px",
+    }}
+  >
+    <strong>Project:</strong>{" "}
+    {issue.project.projectName}
+  </div>
+)}
+
     <div style={{ marginBottom: "15px" }}>
       <label style={fieldLabelStyle}>
         SPRINT
@@ -2156,7 +2292,9 @@ const availableStatusOptions =
   }}
 >
   {loadingRecommendation
-    ? "Finding Best Developer..."
+  ? "Finding Best Developer..."
+  : issue.assignedDeveloper
+    ? "Reassign Developer"
     : "Recommend Developer"}
 </button>
 

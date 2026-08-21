@@ -95,7 +95,7 @@ export default function DeveloperRecommendationModal({
             className="assign-developer-btn"
             onClick={() => onAssign(recommendation, issue)}
           >
-            ✓ Assign Issue
+            ✓ Assign Developer
           </button>
 
         </div>
