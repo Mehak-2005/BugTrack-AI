@@ -149,6 +149,13 @@ assignedDeveloper: {
   ref: "TeamMember",
   default: null,
 },
+    // ========================================
+// RESOLUTION TIME
+// ========================================
+resolvedAt: {
+  type: Date,
+  default: null,
+},
 
     // ========================================
     // SEMANTIC SEARCH EMBEDDING
@@ -157,6 +164,7 @@ assignedDeveloper: {
       type: [Number],
       default: [],
     },
+
 
     // ========================================
     // AI RESOLUTION ASSISTANCE

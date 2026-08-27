@@ -1948,6 +1948,160 @@ RULES
   }
 };
 // ==========================================
+// AI ANALYTICS INSIGHTS
+// ==========================================
+
+const generateAnalyticsInsights = async ({
+  summary,
+  defectsByStatus,
+  defectsByPriority,
+  defectsBySeverity,
+  defectsByCategory,
+  developerWorkload,
+  defectTrends,
+}) => {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3-flash-preview",
+    });
+
+    const prompt = `
+You are an AI analytics assistant inside an intelligent
+software defect tracking platform called BugTrack AI.
+
+Analyze the following dashboard analytics data and generate
+useful insights for a development team.
+
+ANALYTICS DATA:
+
+Summary:
+${JSON.stringify(summary, null, 2)}
+
+Defects By Status:
+${JSON.stringify(defectsByStatus, null, 2)}
+
+Defects By Priority:
+${JSON.stringify(defectsByPriority, null, 2)}
+
+Defects By Severity:
+${JSON.stringify(defectsBySeverity, null, 2)}
+
+Defects By Category:
+${JSON.stringify(defectsByCategory, null, 2)}
+
+Developer Workload:
+${JSON.stringify(developerWorkload, null, 2)}
+
+Defect Trends:
+${JSON.stringify(defectTrends, null, 2)}
+
+Generate exactly 5 concise and useful insights.
+
+The insights should consider:
+
+1. Developer workload imbalance
+2. Critical or high-severity defects
+3. Defect status distribution
+4. Defect trends over time
+5. Recommended action for the development team
+
+IMPORTANT RULES:
+
+- Use ONLY the provided analytics data.
+- Do not invent names, numbers, dates, or defects.
+- Keep each insight concise and professional.
+- Clearly distinguish observations from recommendations.
+- Return ONLY valid JSON.
+- Do not use Markdown or code fences.
+
+Return the response in exactly this format:
+
+{
+  "insights": [
+    {
+      "type": "workload",
+      "title": "Short insight title",
+      "message": "Concise insight message"
+    },
+    {
+      "type": "severity",
+      "title": "Short insight title",
+      "message": "Concise insight message"
+    },
+    {
+      "type": "status",
+      "title": "Short insight title",
+      "message": "Concise insight message"
+    },
+    {
+      "type": "trend",
+      "title": "Short insight title",
+      "message": "Concise insight message"
+    },
+    {
+      "type": "recommendation",
+      "title": "Recommended Action",
+      "message": "Concise recommendation"
+    }
+  ]
+}
+`;
+
+    const result = await model.generateContent(prompt);
+
+    const response = result.response;
+
+    const text = response.text();
+
+    if (!text || !text.trim()) {
+      throw new Error(
+        "Gemini returned empty analytics insights"
+      );
+    }
+
+    const cleanedResponse = text
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    let parsedResponse;
+
+    try {
+      parsedResponse = JSON.parse(cleanedResponse);
+    } catch (parseError) {
+      console.error(
+        "Invalid Gemini Analytics JSON:",
+        cleanedResponse
+      );
+
+      throw new Error(
+        "Gemini returned an invalid analytics response"
+      );
+    }
+
+    if (
+      !parsedResponse ||
+      !Array.isArray(parsedResponse.insights)
+    ) {
+      throw new Error(
+        "Gemini returned invalid analytics insights"
+      );
+    }
+
+    return parsedResponse.insights;
+  } catch (error) {
+    console.error(
+      "Gemini Analytics Insights Error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to generate AI analytics insights"
+    );
+  }
+};
+// ==========================================
 // EXPORT FUNCTIONS
 // ==========================================
 
@@ -1958,4 +2112,5 @@ module.exports = {
   generateTestCases,
   recommendDeveloper,
   generateResolutionVerification,
+  generateAnalyticsInsights,
 };

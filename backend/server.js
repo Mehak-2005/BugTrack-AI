@@ -15,6 +15,9 @@ const attachmentRoutes = require("./routes/attachmentRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const sprintRoutes = require("./routes/sprintRoutes");
 const teamMemberRoutes = require("./routes/teamMemberRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 const app = express();
 app.use(
   "/uploads",
@@ -27,11 +30,13 @@ app.use("/api/auth",authRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/projects",projectRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/comments", commentRoutes);
 app.use("/api/attachments", attachmentRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/sprints", sprintRoutes);
 app.use("/api/team", teamMemberRoutes);
+app.use("/api-docs",swaggerUi.serve,swaggerUi.setup(swaggerSpec));
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))

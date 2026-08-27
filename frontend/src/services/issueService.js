@@ -109,3 +109,47 @@ export const analyzeBug = async (description) => {
 
   return res.data;
 };
+// ========================================
+// ANALYTICS
+// Milestone 3
+// ========================================
+
+// GET GENERAL ANALYTICS
+export const getAnalytics = async () => {
+  const res = await axios.get(
+    `${API}/analytics`,
+    authHeaders()
+  );
+
+  return res.data;
+};
+
+// GET DEVELOPER WORKLOAD
+export const getDeveloperWorkload = async () => {
+  const res = await axios.get(
+    `${API}/analytics/developer-workload`,
+    authHeaders()
+  );
+
+  return res.data;
+};
+
+// GET DEFECT TRENDS
+export const getDefectTrends = async () => {
+  const res = await axios.get(
+    `${API}/analytics/trends`,
+    authHeaders()
+  );
+
+  return res.data;
+};
+
+// GET AVERAGE RESOLUTION TIME
+export const getAverageResolutionTime = async () => {
+  const res = await axios.get(
+    `${API}/analytics/resolution-time`,
+    authHeaders()
+  );
+
+  return res.data;
+};

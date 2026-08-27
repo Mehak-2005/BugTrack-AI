@@ -2666,3 +2666,34 @@ body {
   max-width: 100%;
   overflow-x: hidden;
 }
+.generate-ai-btn {
+  background-color: #8f4358;
+  color: white;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(143, 67, 88, 0.25);
+}
+
+.generate-ai-btn:hover {
+  background-color: #733246;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(143, 67, 88, 0.35);
+}
+
+.generate-ai-btn:active {
+  transform: translateY(0);
+}
+
+.generate-ai-btn:disabled {
+  background-color: #b8a0a6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

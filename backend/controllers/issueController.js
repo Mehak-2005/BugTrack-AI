@@ -1,6 +1,6 @@
 const Issue = require("../models/Issue");
 const Activity = require("../models/Activity");
-
+const mongoose = require("mongoose");
 const {
   generateEmbedding,
   cosineSimilarity,
@@ -15,6 +15,7 @@ const VALID_STATUSES = [
   "In Progress",
   "In Review",
   "Resolved",
+  "Closed",
 ];
 
 const VALID_PRIORITIES = [
@@ -194,6 +195,7 @@ exports.createIssue = async (req, res) => {
       sprint,
        defectType,
   affectedModule,
+   assignedDeveloper,
        skipDuplicateCheck = false,
     } = req.body;
 
@@ -340,6 +342,8 @@ if (
 
   reportedBy:
     req.user.id,
+
+  assignedDeveloper: assignedDeveloper || null,
 
   // Store semantic embedding
   embedding,
@@ -564,14 +568,11 @@ if (
 
     status: "Open",
 
-    priority:
-      priority || "Medium",
+    priority:priority || "Medium",
 
-    severity:
-      severity || "Medium",
+    severity:severity || "Medium",
 
-    category:
-      category || "Other",
+    category: category || "Other",
 
     defectType:
       defectType || "Other",
@@ -586,14 +587,13 @@ if (
     reportedBy:
       req.user.id,
 
+  assignedDeveloper:assignedDeveloper || null,
+
     embedding,
   });
-
-
     // =================================================
     // RECORD AI ISSUE CREATED
     // =================================================
-
     await Activity.create({
       issue: issue._id,
 
@@ -681,11 +681,9 @@ exports.getSavedIssues = async (
 // PUT /api/issues/:id
 // =====================================================
 
-exports.updateIssue = async (
-  req,
-  res
-) => {
+exports.updateIssue = async (req,res) => {
   try {
+    // Validate issue ID
     const {
       title,
       description,
@@ -698,7 +696,75 @@ exports.updateIssue = async (
       defectType,
   affectedModule,
   assignedDeveloper,
+  skipDuplicateCheck = false,
     } = req.body;
+
+    if (!mongoose.isValidObjectId(req.params.id)) {
+  return res.status(400).json({
+    message: "Invalid issue ID",
+  });
+}
+
+      // Validate related IDs if provided
+    if (project && !mongoose.isValidObjectId(project)) {
+      return res.status(400).json({
+        message: "Invalid project ID",
+      });
+    }
+
+    if (sprint && !mongoose.isValidObjectId(sprint)) {
+      return res.status(400).json({
+        message: "Invalid sprint ID",
+      });
+    }
+
+    if (
+      assignedDeveloper &&
+      !mongoose.isValidObjectId(assignedDeveloper)
+    ) {
+      return res.status(400).json({
+        message: "Invalid assigned developer ID",
+      });
+    }
+
+    // Validate project exists and belongs to logged-in user
+if (project) {
+  const existingProject = await Project.findOne({
+    _id: project,
+    owner: req.user.id,
+  });
+
+  if (!existingProject) {
+    return res.status(404).json({
+      message: "Project not found",
+    });
+  }
+}
+
+// Validate sprint exists
+if (sprint) {
+  const existingSprint = await Sprint.findById(sprint);
+
+  if (!existingSprint) {
+    return res.status(404).json({
+      message: "Sprint not found",
+    });
+  }
+}
+
+// Validate assigned developer exists and belongs to logged-in user
+if (assignedDeveloper) {
+  const existingDeveloper = await TeamMember.findOne({
+    _id: assignedDeveloper,
+    owner: req.user.id,
+  });
+
+  if (!existingDeveloper) {
+    return res.status(404).json({
+      message: "Assigned developer not found",
+    });
+  }
+}
 
     // =================================================
     // VALIDATION
@@ -792,6 +858,7 @@ exports.updateIssue = async (
 
         Resolved: [
           "Resolved",
+          "Closed",
         ],
       };
 
@@ -837,8 +904,12 @@ exports.updateIssue = async (
     }
 
     if (status !== undefined) {
-      updateData.status = status;
-    
+  updateData.status = status;
+
+  if (status === "Resolved" && 
+    existingIssue.status !== "Resolved") {
+    updateData.resolvedAt = new Date();
+  }
 }
 
 // ========================================
@@ -1137,6 +1208,12 @@ if (affectedModule !== undefined) {
 
 exports.deleteIssue = async (req,res) => {
   try {
+    // Validate issue ID
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({
+        message: "Invalid issue ID",
+      });
+    }
     // =================================================
     // FIND ISSUE
     // =================================================
@@ -1252,6 +1329,308 @@ exports.semanticSearch = async (req, res) => {
 
     return res.status(500).json({
       message: "Semantic search failed",
+      error: error.message,
+    });
+  }
+};
+// =====================================================
+// GET ANALYTICS
+// GET /api/issues/analytics
+// =====================================================
+
+exports.getAnalytics = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const issues = await Issue.find({
+      reportedBy: userId,
+    });
+
+    const totalDefects = issues.length;
+
+    const openDefects = issues.filter(
+      (issue) => issue.status === "Open"
+    ).length;
+
+    const inProgressDefects = issues.filter(
+      (issue) => issue.status === "In Progress"
+    ).length;
+
+    const resolvedDefects = issues.filter(
+      (issue) => issue.status === "Resolved"
+    ).length;
+
+    const closedDefects = issues.filter(
+      (issue) => issue.status === "Closed"
+    ).length;
+
+    const defectsBySeverity = {};
+    const defectsByCategory = {};
+    const defectsByStatus = {};
+
+    issues.forEach((issue) => {
+      // Severity
+      if (issue.severity) {
+        defectsBySeverity[issue.severity] =
+          (defectsBySeverity[issue.severity] || 0) + 1;
+      }
+
+      // Category
+      if (issue.category) {
+        defectsByCategory[issue.category] =
+          (defectsByCategory[issue.category] || 0) + 1;
+      }
+
+      // Status
+      if (issue.status) {
+        defectsByStatus[issue.status] =
+          (defectsByStatus[issue.status] || 0) + 1;
+      }
+    });
+
+    res.status(200).json({
+      totalDefects,
+      openDefects,
+      inProgressDefects,
+      resolvedDefects,
+      closedDefects,
+      defectsBySeverity,
+      defectsByCategory,
+      defectsByStatus,
+    });
+
+  } catch (error) {
+    console.error("Analytics Error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch analytics",
+      error: error.message,
+    });
+  }
+};
+exports.getDeveloperWorkload = async (req, res) => {
+  try {
+    const workload = await Issue.aggregate([
+      {
+        $match: {
+          assignedDeveloper: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: "$assignedDeveloper",
+
+          totalDefects: {
+            $sum: 1,
+          },
+
+          openDefects: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Open"] },
+                1,
+                0,
+              ],
+            },
+          },
+
+          inProgressDefects: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "In Progress"] },
+                1,
+                0,
+              ],
+            },
+          },
+
+          resolvedDefects: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Resolved"] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+
+      {
+        $lookup: {
+          from: "teammembers",
+          localField: "_id",
+          foreignField: "_id",
+          as: "developer",
+        },
+      },
+
+      {
+        $unwind: "$developer",
+      },
+
+      {
+        $project: {
+          _id: 1,
+          name: "$developer.name",
+          totalDefects: 1,
+          openDefects: 1,
+          inProgressDefects: 1,
+          resolvedDefects: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      workload,
+    });
+
+  } catch (error) {
+    console.error("Developer workload error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch developer workload",
+    });
+  }
+};
+// =====================================================
+// GET DEFECT TRENDS
+// GET /api/issues/analytics/trends
+// =====================================================
+
+exports.getDefectTrends = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const trends = await Issue.aggregate([
+      {
+        $match: {
+          reportedBy: new mongoose.Types.ObjectId(userId),
+        },
+      },
+
+      {
+        $group: {
+          _id: {
+            date: {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+              },
+            },
+          },
+
+          created: {
+            $sum: 1,
+          },
+
+          resolved: {
+            $sum: {
+              $cond: [
+                { $eq: ["$status", "Resolved"] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 0,
+          date: "$_id.date",
+          created: 1,
+          resolved: 1,
+        },
+      },
+
+      {
+        $sort: {
+          date: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      trends,
+    });
+
+  } catch (error) {
+    console.error("Defect trends error:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch defect trends",
+      error: error.message,
+    });
+  }
+};
+// =====================================================
+// GET AVERAGE RESOLUTION TIME
+// GET /api/issues/analytics/resolution-time
+// =====================================================
+
+exports.getAverageResolutionTime = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await Issue.aggregate([
+      {
+        $match: {
+          reportedBy: new mongoose.Types.ObjectId(userId),
+          status: "Resolved",
+          resolvedAt: { $ne: null },
+        },
+      },
+      {
+        $project: {
+          resolutionTime: {
+            $subtract: ["$resolvedAt", "$createdAt"],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageResolutionTime: {
+            $avg: "$resolutionTime",
+          },
+          resolvedDefects: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        averageResolutionTimeHours: 0,
+        resolvedDefects: 0,
+      });
+    }
+
+    const averageMilliseconds =
+      result[0].averageResolutionTime;
+
+    const averageResolutionTimeHours =
+      Number(
+        (averageMilliseconds / (1000 * 60 * 60)).toFixed(2)
+      );
+
+    res.status(200).json({
+      averageResolutionTimeHours,
+      resolvedDefects: result[0].resolvedDefects,
+    });
+
+  } catch (error) {
+    console.error(
+      "Average resolution time error:",
+      error
+    );
+
+    res.status(500).json({
+      message:
+        "Failed to calculate average resolution time",
       error: error.message,
     });
   }
