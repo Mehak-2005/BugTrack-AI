@@ -1,6 +1,10 @@
 const Issue = require("../models/Issue");
 const Activity = require("../models/Activity");
 const mongoose = require("mongoose");
+const Sprint = require("../models/Sprint");
+const TeamMember = require("../models/TeamMember");
+const Project = require("../models/Project");
+const User = require("../models/User");
 const {
   generateEmbedding,
   cosineSimilarity,
