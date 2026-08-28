@@ -1,10 +1,11 @@
 const Issue = require("../models/Issue");
 const Activity = require("../models/Activity");
 const mongoose = require("mongoose");
+
+const Project = require("../models/Project");
 const Sprint = require("../models/Sprint");
 const TeamMember = require("../models/TeamMember");
-const Project = require("../models/Project");
-const User = require("../models/User");
+
 const {
   generateEmbedding,
   cosineSimilarity,
@@ -993,9 +994,9 @@ if (affectedModule !== undefined) {
         },
 
         {
-          new: true,
-          runValidators: true,
-        }
+  returnDocument: "after",
+  runValidators: true,
+}
       )
         .populate(
           "reportedBy",

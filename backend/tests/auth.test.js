@@ -1,8 +1,6 @@
 const request = require("supertest");
 const express = require("express");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-
 const authRoutes = require("../routes/authRoutes");
 const User = require("../models/User");
 
@@ -16,9 +14,9 @@ let mongoServer;
 beforeAll(async () => {
   process.env.JWT_SECRET = "test-secret-key";
 
-  mongoServer = await MongoMemoryServer.create();
-
-  await mongoose.connect(mongoServer.getUri());
+  await mongoose.connect(
+    "mongodb://127.0.0.1:27017/bugtrack_auth_test"
+  );
 });
 
 afterEach(async () => {
@@ -26,8 +24,10 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+  }
 });
 
 describe("Authentication Tests", () => {

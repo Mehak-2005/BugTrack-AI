@@ -1,7 +1,6 @@
 const request = require("supertest");
 const express = require("express");
 const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
 const jwt = require("jsonwebtoken");
 
 const issueRoutes = require("../routes/issueRoutes");
@@ -27,19 +26,19 @@ const app = express();
 app.use(express.json());
 app.use("/api/issues", issueRoutes);
 
-let mongoServer;
+
 let token;
 let userId;
 
 // ========================================
 // SETUP BEFORE ALL TESTS
 // ========================================
-
 beforeAll(async () => {
   process.env.JWT_SECRET = "test-secret-key";
 
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  await mongoose.connect(
+    "mongodb://127.0.0.1:27017/bugtrack_issue_test"
+  );
 
   // Create test user
   const user = await User.create({
@@ -71,6 +70,11 @@ beforeAll(async () => {
 afterEach(async () => {
   await Issue.deleteMany({});
   await TeamMember.deleteMany({});
+
+  // Keep the main test user
+  await User.deleteMany({
+    email: { $ne: "testuser@example.com" },
+  });
 });
 
 // ========================================
@@ -78,11 +82,10 @@ afterEach(async () => {
 // ========================================
 
 afterAll(async () => {
-  await User.deleteMany({});
-  await Issue.deleteMany({});
-
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.dropDatabase();
+    await mongoose.disconnect();
+  }
 });
 
 // ========================================
@@ -111,7 +114,6 @@ describe("Issue Creation Tests", () => {
 
     expect(response.statusCode).toBe(201);
 
-    // The issue is returned directly in response.body
     expect(response.body).toBeDefined();
     expect(response.body._id).toBeDefined();
 
@@ -121,21 +123,97 @@ describe("Issue Creation Tests", () => {
       "The application crashes when clicking the login button"
     );
   });
-  // ========================================
+
+  // ----------------------------------------
+  // CREATE ISSUE WITHOUT DESCRIPTION
+  // ----------------------------------------
+
+  test("Should reject issue creation without description", async () => {
+    const response = await request(app)
+      .post("/api/issues")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Login page error",
+        priority: "High",
+      });
+
+    expect(response.statusCode).toBe(400);
+
+    expect(response.body.message).toBe("Description is required");
+  });
+
+  // ----------------------------------------
+  // CREATE ISSUE WITH INVALID STATUS
+  // ----------------------------------------
+
+  test("Should reject issue creation with invalid status", async () => {
+    const response = await request(app)
+      .post("/api/issues")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Invalid status issue",
+        description: "Testing invalid status validation",
+        status: "Invalid Status",
+      });
+
+    expect(response.statusCode).toBe(400);
+
+    expect(response.body.message).toBe("Invalid status");
+  });
+
+  // ----------------------------------------
+  // CREATE ISSUE WITH INVALID PRIORITY
+  // ----------------------------------------
+
+  test("Should reject issue creation with invalid priority", async () => {
+    const response = await request(app)
+      .post("/api/issues")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title: "Invalid priority issue",
+        description: "Testing invalid priority validation",
+        priority: "Very Urgent",
+      });
+
+    expect(response.statusCode).toBe(400);
+
+    expect(response.body.message).toBe("Invalid priority");
+  });
+
+  // ----------------------------------------
+  // CREATE ISSUE WITHOUT AUTHENTICATION
+  // ----------------------------------------
+
+  test(
+    "Should reject issue creation without authentication token",
+    async () => {
+      const response = await request(app)
+        .post("/api/issues")
+        .send({
+          title: "Unauthorized issue",
+          description:
+            "This request does not contain a JWT token",
+        });
+
+      expect(response.statusCode).toBe(401);
+    }
+  );
+});
+
+// ========================================
 // PERMISSION TESTS
 // ========================================
 
 describe("Permission Tests", () => {
-
   test("Should not allow another user to update an issue", async () => {
-
-    // Create an issue using the original logged-in user
+    // Create issue using original user
     const createResponse = await request(app)
       .post("/api/issues")
       .set("Authorization", `Bearer ${token}`)
       .send({
         title: "Permission Test Issue",
-        description: "Testing whether another user can update this issue",
+        description:
+          "Testing whether another user can update this issue",
         priority: "High",
         severity: "High",
         category: "Authentication",
@@ -167,7 +245,7 @@ describe("Permission Tests", () => {
       }
     );
 
-    // Try to update the first user's issue
+    // Try to update original user's issue
     const updateResponse = await request(app)
       .put(`/api/issues/${issueId}`)
       .set("Authorization", `Bearer ${anotherUserToken}`)
@@ -175,7 +253,6 @@ describe("Permission Tests", () => {
         status: "In Progress",
       });
 
-    // Another user should not have permission
     expect(updateResponse.statusCode).toBe(404);
 
     expect(updateResponse.body.message).toBe(
@@ -183,63 +260,62 @@ describe("Permission Tests", () => {
     );
   });
 
+  test(
+    "Should not allow another user to access an issue they do not own",
+    async () => {
+      // Create issue using original user
+      const createResponse = await request(app)
+        .post("/api/issues")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Private Issue",
+          description: "This issue belongs to the original user",
+          priority: "Medium",
+          severity: "Medium",
+          category: "Authentication",
+          defectType: "Functional",
+          status: "Open",
+        });
 
-  test("Should not allow another user to access an issue they do not own", async () => {
+      expect(createResponse.statusCode).toBe(201);
 
-    // Create issue using the original user
-    const createResponse = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Private Issue",
-        description: "This issue belongs to the original user",
-        priority: "Medium",
-        severity: "Medium",
-        category: "Authentication",
-        defectType: "Functional",
-        status: "Open",
+      const issueId = createResponse.body._id;
+
+      // Create another user
+      const anotherUser = await User.create({
+        name: "Unauthorized User",
+        email: "unauthorized@example.com",
+        password: "hashedpassword",
       });
 
-    expect(createResponse.statusCode).toBe(201);
+      // Generate JWT for another user
+      const anotherUserToken = jwt.sign(
+        {
+          id: anotherUser._id,
+          name: anotherUser.name,
+          email: anotherUser.email,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "7d",
+        }
+      );
 
-    const issueId = createResponse.body._id;
+      // Try to update the issue
+      const response = await request(app)
+        .put(`/api/issues/${issueId}`)
+        .set("Authorization", `Bearer ${anotherUserToken}`)
+        .send({
+          priority: "Critical",
+        });
 
-    // Create another user
-    const anotherUser = await User.create({
-      name: "Unauthorized User",
-      email: "unauthorized@example.com",
-      password: "hashedpassword",
-    });
+      expect(response.statusCode).toBe(404);
 
-    // Generate JWT for another user
-    const anotherUserToken = jwt.sign(
-      {
-        id: anotherUser._id,
-        name: anotherUser.name,
-        email: anotherUser.email,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
-
-    // Try to update the issue
-    const response = await request(app)
-      .put(`/api/issues/${issueId}`)
-      .set("Authorization", `Bearer ${anotherUserToken}`)
-      .send({
-        priority: "Critical",
-      });
-
-    // Should be denied
-    expect(response.statusCode).toBe(404);
-
-    expect(response.body.message).toBe(
-      "Issue not found or you do not have permission to update it"
-    );
-  });
-
+      expect(response.body.message).toBe(
+        "Issue not found or you do not have permission to update it"
+      );
+    }
+  );
 });
 
 // ========================================
@@ -247,9 +323,7 @@ describe("Permission Tests", () => {
 // ========================================
 
 describe("Resolution Workflow Tests", () => {
-
   test("Should complete the full issue resolution workflow", async () => {
-
     // ========================================
     // CREATE ISSUE
     // ========================================
@@ -313,7 +387,7 @@ describe("Resolution Workflow Tests", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.issue.status).toBe("Resolved");
 
-    // Check that resolution timestamp was created
+    // Check resolution timestamp
     expect(response.body.issue.resolvedAt).toBeDefined();
     expect(response.body.issue.resolvedAt).not.toBeNull();
 
@@ -330,13 +404,10 @@ describe("Resolution Workflow Tests", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.issue.status).toBe("Closed");
-
   });
 
-
   test("Should reject an invalid status transition", async () => {
-
-    // Create a new issue in Open status
+    // Create issue in Open status
     const createResponse = await request(app)
       .post("/api/issues")
       .set("Authorization", `Bearer ${token}`)
@@ -354,8 +425,7 @@ describe("Resolution Workflow Tests", () => {
 
     const issueId = createResponse.body._id;
 
-    // Try invalid transition:
-    // Open → Resolved
+    // Open → Resolved should be invalid
     const response = await request(app)
       .put(`/api/issues/${issueId}`)
       .set("Authorization", `Bearer ${token}`)
@@ -368,166 +438,22 @@ describe("Resolution Workflow Tests", () => {
     expect(response.body.message).toBe(
       "Invalid status transition: Open → Resolved"
     );
-
   });
-
 });
 
-  // ----------------------------------------
-  // CREATE ISSUE WITHOUT DESCRIPTION
-  // ----------------------------------------
-
-  test("Should reject issue creation without description", async () => {
-    const response = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Login page error",
-        priority: "High",
-      });
-
-    expect(response.statusCode).toBe(400);
-
-    expect(response.body.message).toBe(
-      "Description is required"
-    );
-  });
-
-  // ----------------------------------------
-  // CREATE ISSUE WITH INVALID STATUS
-  // ----------------------------------------
-
-  test("Should reject issue creation with invalid status", async () => {
-    const response = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Invalid status issue",
-        description: "Testing invalid status validation",
-        status: "Invalid Status",
-      });
-
-    expect(response.statusCode).toBe(400);
-
-    expect(response.body.message).toBe(
-      "Invalid status"
-    );
-  });
-
-  // ----------------------------------------
-  // CREATE ISSUE WITH INVALID PRIORITY
-  // ----------------------------------------
-
-  test("Should reject issue creation with invalid priority", async () => {
-    const response = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Invalid priority issue",
-        description: "Testing invalid priority validation",
-        priority: "Very Urgent",
-      });
-
-    expect(response.statusCode).toBe(400);
-
-    expect(response.body.message).toBe(
-      "Invalid priority"
-    );
-  });
-
-  // ----------------------------------------
-  // CREATE ISSUE WITHOUT AUTHENTICATION
-  // ----------------------------------------
-
-  test(
-    "Should reject issue creation without authentication token",
-    async () => {
-      const response = await request(app)
-        .post("/api/issues")
-        .send({
-          title: "Unauthorized issue",
-          description:
-            "This request does not contain a JWT token",
-        });
-
-      expect(response.statusCode).toBe(401);
-    }
-  );
-
-  // ========================================
-  // GET ISSUES TESTS
-  // ========================================
-
-  describe("Get Issues Tests", () => {
-    // ----------------------------------------
-    // GET ALL ISSUES
-    // ----------------------------------------
-    test("Should get all issues for the logged-in user", async () => {
-  // Create first issue
-  const firstIssueResponse = await request(app)
-    .post("/api/issues")
-    .set("Authorization", `Bearer ${token}`)
-    .send({
-      title: "First Issue",
-      description: "Description for the first issue",
-      priority: "High",
-      severity: "High",
-      category: "Authentication",
-      defectType: "Functional",
-      status: "Open",
-    });
-
-  expect(firstIssueResponse.statusCode).toBe(201);
-
-        // Create second issue
-       const secondIssueResponse = await request(app)
-    .post("/api/issues")
-    .set("Authorization", `Bearer ${token}`)
-    .send({
-      title: "Second Issue",
-      description: "Description for the second issue",
-      priority: "Medium",
-      severity: "Medium",
-      category: "UI",
-      defectType: "Functional",
-      status: "Open",
-    });
-
-  expect(secondIssueResponse.statusCode).toBe(201);
-
-        // Get all issues
-         const response = await request(app)
-    .get("/api/issues")
-    .set("Authorization", `Bearer ${token}`);
-         // Check response
-  expect(response.statusCode).toBe(200);
-
-  expect(Array.isArray(response.body)).toBe(true);
-
-  expect(response.body.length).toBeGreaterThanOrEqual(2);
-
-  const issueTitles = response.body.map(
-    (issue) => issue.title
-  );
-
-  expect(issueTitles).toContain("First Issue");
-  expect(issueTitles).toContain("Second Issue");
-});
 // ========================================
-// ISSUE UPDATE AND STATUS TRANSITION TESTS
+// GET ISSUES TESTS
 // ========================================
 
-describe("Issue Update and Status Transition Tests", () => {
-
-  test("Should update issue status from Open to In Progress", async () => {
-
-    // Create an issue first
-    const createResponse = await request(app)
+describe("Get Issues Tests", () => {
+  test("Should get all issues for the logged-in user", async () => {
+    // Create first issue
+    const firstIssueResponse = await request(app)
       .post("/api/issues")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        title: "Status Transition Issue",
-        description: "Testing issue status transition",
+        title: "First Issue",
+        description: "Description for the first issue",
         priority: "High",
         severity: "High",
         category: "Authentication",
@@ -535,25 +461,104 @@ describe("Issue Update and Status Transition Tests", () => {
         status: "Open",
       });
 
-    expect(createResponse.statusCode).toBe(201);
+    expect(firstIssueResponse.statusCode).toBe(201);
 
-    const issueId = createResponse.body._id;
-
-    // Update status
-    const updateResponse = await request(app)
-      .put(`/api/issues/${issueId}`)
+    // Create second issue
+    const secondIssueResponse = await request(app)
+      .post("/api/issues")
       .set("Authorization", `Bearer ${token}`)
       .send({
-        status: "In Progress",
+        title: "Second Issue",
+        description: "Description for the second issue",
+        priority: "Medium",
+        severity: "Medium",
+        category: "UI",
+        defectType: "Functional",
+        status: "Open",
       });
-    expect(updateResponse.statusCode).toBe(200);
-expect(updateResponse.body.message).toBe(
-  "Issue updated successfully"
-);
 
-    // Check whether status was updated
-expect(updateResponse.body.issue.status).toBe("In Progress");  });
+    expect(secondIssueResponse.statusCode).toBe(201);
 
+    // Get all issues
+    const response = await request(app)
+      .get("/api/issues")
+      .set("Authorization", `Bearer ${token}`);
+
+    // Check response
+    expect(response.statusCode).toBe(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+
+    expect(response.body.length).toBeGreaterThanOrEqual(2);
+
+    const issueTitles = response.body.map(
+      (issue) => issue.title
+    );
+
+    expect(issueTitles).toContain("First Issue");
+    expect(issueTitles).toContain("Second Issue");
+  });
+
+  // ----------------------------------------
+  // GET ISSUES WITHOUT AUTHENTICATION
+  // ----------------------------------------
+
+  test(
+    "Should reject getting issues without authentication",
+    async () => {
+      const response = await request(app)
+        .get("/api/issues");
+
+      expect(response.statusCode).toBe(401);
+    }
+  );
+});
+
+// ========================================
+// ISSUE UPDATE AND STATUS TRANSITION TESTS
+// ========================================
+
+describe("Issue Update and Status Transition Tests", () => {
+  test(
+    "Should update issue status from Open to In Progress",
+    async () => {
+      // Create an issue
+      const createResponse = await request(app)
+        .post("/api/issues")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Status Transition Issue",
+          description: "Testing issue status transition",
+          priority: "High",
+          severity: "High",
+          category: "Authentication",
+          defectType: "Functional",
+          status: "Open",
+        });
+
+      expect(createResponse.statusCode).toBe(201);
+
+      const issueId = createResponse.body._id;
+
+      // Update status
+      const updateResponse = await request(app)
+        .put(`/api/issues/${issueId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          status: "In Progress",
+        });
+
+      expect(updateResponse.statusCode).toBe(200);
+
+      expect(updateResponse.body.message).toBe(
+        "Issue updated successfully"
+      );
+
+      expect(updateResponse.body.issue.status).toBe(
+        "In Progress"
+      );
+    }
+  );
 });
 
 // ========================================
@@ -561,101 +566,90 @@ expect(updateResponse.body.issue.status).toBe("In Progress");  });
 // ========================================
 
 describe("Defect Assignment Tests", () => {
-  test("Should assign an issue to a developer successfully", async () => {
-    // Create a developer
-    const developer = await TeamMember.create({
-      owner: userId,
-      name: "Test Developer",
-      role: "Backend Developer",
-      skills: ["Node.js", "MongoDB"],
-      experience: 2,
-      workload: 30,
-      email: "developer@example.com",
-    });
-
-    // Create an issue
-    const createResponse = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Assignment Test Issue",
-        description: "Testing issue assignment to a developer",
-        priority: "High",
-        severity: "High",
-        category: "Authentication",
-        defectType: "Functional",
-        status: "Open",
+  test(
+    "Should assign an issue to a developer successfully",
+    async () => {
+      // Create a developer
+      const developer = await TeamMember.create({
+        owner: userId,
+        name: "Test Developer",
+        role: "Backend Developer",
+        skills: ["Node.js", "MongoDB"],
+        experience: 2,
+        workload: 30,
+        email: "developer@example.com",
       });
 
-    expect(createResponse.statusCode).toBe(201);
+      // Create an issue
+      const createResponse = await request(app)
+        .post("/api/issues")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Assignment Test Issue",
+          description: "Testing issue assignment to a developer",
+          priority: "High",
+          severity: "High",
+          category: "Authentication",
+          defectType: "Functional",
+          status: "Open",
+        });
 
-    const issueId = createResponse.body._id;
+      expect(createResponse.statusCode).toBe(201);
 
-    // Assign issue to developer
-    const updateResponse = await request(app)
-      .put(`/api/issues/${issueId}`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        assignedDeveloper: developer._id.toString(),
-      });
+      const issueId = createResponse.body._id;
 
-    // Check response
-    expect(updateResponse.statusCode).toBe(200);
+      // Assign issue to developer
+      const updateResponse = await request(app)
+        .put(`/api/issues/${issueId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          assignedDeveloper: developer._id.toString(),
+        });
 
-    expect(updateResponse.body.issue).toBeDefined();
+      expect(updateResponse.statusCode).toBe(200);
 
-    expect(
-      updateResponse.body.issue.assignedDeveloper._id.toString()
-    ).toBe(developer._id.toString());
-  });
+      expect(updateResponse.body.issue).toBeDefined();
 
-  test("Should reject assignment to an invalid developer ID", async () => {
-    // Create an issue
-    const createResponse = await request(app)
-      .post("/api/issues")
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        title: "Invalid Developer Assignment Issue",
-        description: "Testing invalid developer assignment",
-        priority: "Medium",
-        severity: "Medium",
-        category: "Authentication",
-        defectType: "Functional",
-        status: "Open",
-      });
+      expect(
+        updateResponse.body.issue.assignedDeveloper._id.toString()
+      ).toBe(developer._id.toString());
+    }
+  );
 
-    expect(createResponse.statusCode).toBe(201);
+  test(
+    "Should reject assignment to an invalid developer ID",
+    async () => {
+      // Create an issue
+      const createResponse = await request(app)
+        .post("/api/issues")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          title: "Invalid Developer Assignment Issue",
+          description: "Testing invalid developer assignment",
+          priority: "Medium",
+          severity: "Medium",
+          category: "Authentication",
+          defectType: "Functional",
+          status: "Open",
+        });
 
-    const issueId = createResponse.body._id;
+      expect(createResponse.statusCode).toBe(201);
 
-    // Try assigning an invalid ID
-    const updateResponse = await request(app)
-      .put(`/api/issues/${issueId}`)
-      .set("Authorization", `Bearer ${token}`)
-      .send({
-        assignedDeveloper: "invalid-developer-id",
-      });
+      const issueId = createResponse.body._id;
 
-    expect(updateResponse.statusCode).toBe(400);
+      // Try assigning invalid ID
+      const updateResponse = await request(app)
+        .put(`/api/issues/${issueId}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          assignedDeveloper: "invalid-developer-id",
+        });
 
-    expect(updateResponse.body.message).toBe(
-      "Invalid assigned developer ID"
-    );
-  });
-});
+      expect(updateResponse.statusCode).toBe(400);
 
-    // ----------------------------------------
-    // GET ISSUES WITHOUT AUTHENTICATION
-    // ----------------------------------------
-
-    test(
-      "Should reject getting issues without authentication",
-      async () => {
-        const response = await request(app)
-          .get("/api/issues");
-
-        expect(response.statusCode).toBe(401);
-      }
-    );
-  });
+      expect(updateResponse.body.message).toBe(
+        "Invalid assigned developer ID"
+      );
+    }
+  );
 });
