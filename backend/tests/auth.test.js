@@ -5,6 +5,8 @@ const authRoutes = require("../routes/authRoutes");
 const User = require("../models/User");
 
 const app = express();
+const TEST_DB_URI =
+  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/bugtrack_test";
 
 app.use(express.json());
 app.use("/api/auth", authRoutes);
@@ -14,9 +16,9 @@ let mongoServer;
 beforeAll(async () => {
   process.env.JWT_SECRET = "test-secret-key";
 
-  await mongoose.connect(
-    "mongodb://127.0.0.1:27017/bugtrack_auth_test"
-  );
+ await mongoose.connect(TEST_DB_URI, {
+    serverSelectionTimeoutMS: 10000,
+  });
 });
 
 afterEach(async () => {

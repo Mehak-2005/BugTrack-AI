@@ -2,11 +2,12 @@ const request = require("supertest");
 const express = require("express");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
-
+jest.setTimeout(30000);
 const issueRoutes = require("../routes/issueRoutes");
 const User = require("../models/User");
 const Issue = require("../models/Issue");
 const TeamMember = require("../models/TeamMember");
+
 
 // ========================================
 // MOCK EMBEDDING SERVICE
@@ -22,6 +23,8 @@ jest.mock("../services/embeddingService", () => ({
 // ========================================
 
 const app = express();
+const TEST_DB_URI =
+  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/bugtrack_test";
 
 app.use(express.json());
 app.use("/api/issues", issueRoutes);
@@ -36,9 +39,12 @@ let userId;
 beforeAll(async () => {
   process.env.JWT_SECRET = "test-secret-key";
 
-  await mongoose.connect(
-    "mongodb://127.0.0.1:27017/bugtrack_issue_test"
-  );
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(TEST_DB_URI, {
+      serverSelectionTimeoutMS: 30000,
+    });
+  }
+
 
   // Create test user
   const user = await User.create({
