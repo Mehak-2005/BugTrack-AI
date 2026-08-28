@@ -1,10 +1,11 @@
-name: Intelligent Software Defect Tracking System  CI/CD
+name: Intelligent Software Defect Tracking System CI/CD
 
 on:
   push:
     branches:
       - main
       - master
+
   pull_request:
     branches:
       - main
@@ -15,9 +16,16 @@ jobs:
     name: Backend Tests and Validation
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: backend
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout Repository
@@ -27,17 +35,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
 
       - name: Install Dependencies
+        working-directory: ./backend
         run: npm ci
 
+      - name: Wait for MongoDB
+        run: |
+          for i in {1..30}; do
+            nc -z 127.0.0.1 27017 && echo "MongoDB is ready!" && exit 0
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+          echo "MongoDB failed to start"
+          exit 1
+
       - name: Run Automated Tests
+        working-directory: ./backend
+        env:
+          JWT_SECRET: test-secret-key
+          MONGO_URI: mongodb://127.0.0.1:27017/bugtrack_test
         run: npm test
 
       - name: Validate Backend
-        run: node --check server.js
+        working-directory: ./backend
+        run: npm run build --if-present
 
   frontend:
     name: Frontend Build and Validation
