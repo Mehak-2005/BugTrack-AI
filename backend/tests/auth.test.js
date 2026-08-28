@@ -16,18 +16,34 @@ let mongoServer;
 beforeAll(async () => {
   process.env.JWT_SECRET = "test-secret-key";
 
- await mongoose.connect(TEST_DB_URI, {
-    serverSelectionTimeoutMS: 10000,
-  });
+  if (mongoose.connection.readyState === 0) {
+    await mongoose.connect(TEST_DB_URI, {
+      serverSelectionTimeoutMS: 30000,
+    });
+  }
+   await User.deleteMany({});
+}, 30000);
+
+beforeEach(async () => {
+  if (mongoose.connection.readyState === 1) {
+    await User.deleteMany({});
+  }
 });
 
 afterEach(async () => {
-  await User.deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    await User.deleteMany({});
+  }
+});
+
+afterEach(async () => {
+  if (mongoose.connection.readyState === 1) {
+    await User.deleteMany({});
+  }
 });
 
 afterAll(async () => {
   if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
   }
 });
@@ -41,7 +57,6 @@ describe("Authentication Tests", () => {
         email: "testuser@example.com",
         password: "Password123",
       });
-
     expect(response.statusCode).toBe(201);
     expect(response.body.message).toBe(
       "Account created successfully"

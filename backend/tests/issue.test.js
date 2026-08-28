@@ -44,8 +44,6 @@ beforeAll(async () => {
       serverSelectionTimeoutMS: 30000,
     });
   }
-
-
   // Create test user
   const user = await User.create({
     name: "Test User",
@@ -54,7 +52,6 @@ beforeAll(async () => {
   });
 
   userId = user._id;
-
   // Generate JWT token
   token = jwt.sign(
     {
@@ -67,21 +64,20 @@ beforeAll(async () => {
       expiresIn: "7d",
     }
   );
-});
+},30000);
 
 // ========================================
 // CLEAN DATABASE AFTER EACH TEST
 // ========================================
 
 afterEach(async () => {
-  await Issue.deleteMany({});
-  await TeamMember.deleteMany({});
+  if (mongoose.connection.readyState === 1) {
+    await Issue.deleteMany({});
+    await TeamMember.deleteMany({});
+  }
+});
 
   // Keep the main test user
-  await User.deleteMany({
-    email: { $ne: "testuser@example.com" },
-  });
-});
 
 // ========================================
 // CLOSE DATABASE
@@ -89,7 +85,6 @@ afterEach(async () => {
 
 afterAll(async () => {
   if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
   }
 });
