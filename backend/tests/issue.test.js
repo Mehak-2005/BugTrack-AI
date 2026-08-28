@@ -41,7 +41,7 @@ beforeAll(async () => {
 
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(TEST_DB_URI, {
-      serverSelectionTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 5000,
     });
   }
   // Create test user
