@@ -44,6 +44,21 @@ beforeAll(async () => {
       serverSelectionTimeoutMS: 5000,
     });
   }
+    // Clean test database before starting
+  await User.deleteMany({});
+  await Issue.deleteMany({});
+  await TeamMember.deleteMany({});
+}, 30000);
+// ========================================
+// SETUP BEFORE EACH TEST
+// ========================================
+
+beforeEach(async () => {
+  // Clean collections before every test
+  await User.deleteMany({});
+  await Issue.deleteMany({});
+  await TeamMember.deleteMany({});
+
   // Create test user
   const user = await User.create({
     name: "Test User",
@@ -64,7 +79,7 @@ beforeAll(async () => {
       expiresIn: "7d",
     }
   );
-},30000);
+});
 
 // ========================================
 // CLEAN DATABASE AFTER EACH TEST
@@ -74,6 +89,7 @@ afterEach(async () => {
   if (mongoose.connection.readyState === 1) {
     await Issue.deleteMany({});
     await TeamMember.deleteMany({});
+     await User.deleteMany({});
   }
 });
 
@@ -573,6 +589,7 @@ describe("Defect Assignment Tests", () => {
       // Create a developer
       const developer = await TeamMember.create({
         owner: userId,
+        project: new mongoose.Types.ObjectId(),
         name: "Test Developer",
         role: "Backend Developer",
         skills: ["Node.js", "MongoDB"],
