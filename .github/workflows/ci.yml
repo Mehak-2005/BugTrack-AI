@@ -12,6 +12,10 @@ on:
       - master
 
 jobs:
+
+  # ==========================================
+  # BACKEND - TESTS AND VALIDATION
+  # ==========================================
   backend:
     name: Backend Tests and Validation
     runs-on: ubuntu-latest
@@ -28,18 +32,23 @@ jobs:
           --health-retries 10
 
     steps:
+
+      # Checkout source code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install Dependencies
+      # Install backend dependencies
+      - name: Install Backend Dependencies
         working-directory: ./backend
         run: npm ci
 
+      # Wait until MongoDB is ready
       - name: Wait for MongoDB
         run: |
           for i in {1..30}; do
@@ -47,9 +56,11 @@ jobs:
             echo "Waiting for MongoDB..."
             sleep 2
           done
+
           echo "MongoDB failed to start"
           exit 1
 
+      # Run Jest tests
       - name: Run Automated Tests
         working-directory: ./backend
         env:
@@ -57,22 +68,30 @@ jobs:
           MONGO_URI: mongodb://127.0.0.1:27017/bugtrack_test
         run: npm test
 
+      # Run backend build if available
       - name: Validate Backend
         working-directory: ./backend
         run: npm run build --if-present
 
+
+  # ==========================================
+  # FRONTEND - BUILD AND VALIDATION
+  # ==========================================
   frontend:
     name: Frontend Build and Validation
     runs-on: ubuntu-latest
 
     defaults:
       run:
-        working-directory: frontend
+        working-directory: ./frontend
 
     steps:
+
+      # Checkout source code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -80,8 +99,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install Dependencies
+      # Install frontend dependencies
+      - name: Install Frontend Dependencies
         run: npm ci
 
+      # Build React/Vite application
       - name: Build Frontend
         run: npm run build
