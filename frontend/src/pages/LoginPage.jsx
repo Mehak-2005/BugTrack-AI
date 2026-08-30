@@ -11,12 +11,11 @@ export default function LoginPage() {
 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // ==========================================
-  // LOGIN
+  // NORMAL USER LOGIN
   // ==========================================
 
   const handleLogin = async (e) => {
@@ -42,7 +41,7 @@ export default function LoginPage() {
 
       console.log("LOGIN RESPONSE:", res.data);
 
-      // Make sure backend returned token
+      // Check token
       if (!res.data.token) {
         setError(
           "Login succeeded but no token was received."
@@ -50,13 +49,13 @@ export default function LoginPage() {
         return;
       }
 
-      // Save JWT token
+      // Save JWT
       localStorage.setItem(
         "token",
         res.data.token
       );
 
-      // Save user information
+      // Save user
       if (res.data.user) {
         localStorage.setItem(
           "user",
@@ -70,12 +69,26 @@ export default function LoginPage() {
         email.trim().toLowerCase()
       );
 
-      // Navigate to dashboard
+      // IMPORTANT:
+      // This is now always a normal login.
+      localStorage.setItem(
+        "loginType",
+        "normal"
+      );
+
+      // Remove any old team-member login data
+      localStorage.removeItem("teamMember");
+      localStorage.removeItem("project");
+      localStorage.removeItem("teamMemberProjectId");
+
+      // Go to dashboard
       navigate("/dashboard", {
         replace: true,
       });
+
     } catch (err) {
       console.error("LOGIN ERROR:", err);
+
       console.error(
         "SERVER RESPONSE:",
         err.response?.data
@@ -86,16 +99,23 @@ export default function LoginPage() {
           err.response?.data?.error ||
           "Login failed. Please check your email and password."
       );
+
     } finally {
       setLoading(false);
     }
   };
 
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
     <div className="login-page">
 
       {/* Decorative background */}
+
       <div className="login-decoration login-decoration-one" />
+
       <div className="login-decoration login-decoration-two" />
 
       <div className="login-container">
@@ -106,20 +126,21 @@ export default function LoginPage() {
 
         <section className="login-hero">
 
-          {/* BRAND */}
-
           <div className="login-brand">
+
             <div className="login-logo">
               B
             </div>
 
             <div>
               <h2>DefectIQ</h2>
-              <span>Intelligent Defect Management</span>
-            </div>
-          </div>
 
-          {/* HERO CONTENT */}
+              <span>
+                Intelligent Defect Management
+              </span>
+            </div>
+
+          </div>
 
           <div className="login-hero-content">
 
@@ -138,6 +159,7 @@ export default function LoginPage() {
               track progress and generate structured
               bug reports from one workspace.
             </p>
+
           </div>
 
           <p className="login-hero-footer">
@@ -160,13 +182,17 @@ export default function LoginPage() {
               B
             </div>
 
+            {/* HEADER */}
+
             <div className="login-card-header">
 
               <p className="login-welcome">
                 WELCOME BACK
               </p>
 
-              <h2>Sign in to your workspace</h2>
+              <h2>
+                Sign in to your workspace
+              </h2>
 
               <p>
                 Enter your account details to
@@ -179,12 +205,17 @@ export default function LoginPage() {
 
             {error && (
               <div className="login-error">
+
                 <span>!</span>
+
                 {error}
+
               </div>
             )}
 
-            {/* FORM */}
+            {/* =================================
+                LOGIN FORM
+            ================================== */}
 
             <form
               onSubmit={handleLogin}
@@ -233,9 +264,7 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) =>
-                      setPassword(
-                        e.target.value
-                      )
+                      setPassword(e.target.value)
                     }
                     disabled={loading}
                     autoComplete="current-password"

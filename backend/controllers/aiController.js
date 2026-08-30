@@ -6,9 +6,11 @@ const {
   recommendDeveloper,
   generateResolutionVerification,
 } = require("../services/geminiService");
-
 const Issue = require("../models/Issue");
 const TeamMember = require("../models/TeamMember");
+const {
+  investigateIssue,
+} = require("../services/investigationAgentService");
 // ==========================================
 // GENERATE AI BUG REPORT
 // POST /api/ai/generate-bug-report
@@ -406,8 +408,7 @@ exports.verifyResolution = async (req, res) => {
   try {
     const { issueId } = req.params;
 
-    const { developerFix } = req.body;
-
+const { developerFix } = req.body || {};
     // ==========================================
     // VALIDATE ISSUE ID
     // ==========================================
@@ -682,6 +683,117 @@ exports.recommendDeveloper = async (req, res) => {
       error:
         error.message ||
         "Failed to recommend developer",
+    });
+  }
+};
+// ==========================================
+// AI RAG ISSUE INVESTIGATION
+// POST /api/ai/investigate/:issueId
+// ==========================================
+//
+// This feature:
+// 1. Finds the current issue
+// 2. Retrieves similar historical issues using RAG
+// 3. Performs duplicate detection
+// 4. Uses Gemini for intelligent investigation
+// 5. Provides probable root causes
+// 6. Suggests investigation actions
+// 7. Identifies missing information
+// ==========================================
+
+exports.investigateIssue = async (req, res) => {
+  try {
+    const { issueId } = req.params;
+
+    // ==========================================
+    // VALIDATE ISSUE ID
+    // ==========================================
+
+    if (!issueId) {
+      return res.status(400).json({
+        error: "Issue ID is required",
+      });
+    }
+
+    // ==========================================
+    // FIND CURRENT ISSUE
+    // ==========================================
+
+    const issue = await Issue.findOne({
+      _id: issueId,
+      reportedBy: req.user.id,
+    });
+
+    // ==========================================
+    // ISSUE NOT FOUND
+    // ==========================================
+
+    if (!issue) {
+      return res.status(404).json({
+        error:
+          "Issue not found or you do not have permission to access it",
+      });
+    }
+
+    // ==========================================
+    // VALIDATE ISSUE DESCRIPTION
+    // ==========================================
+
+    if (
+      !issue.description ||
+      !issue.description.trim()
+    ) {
+      return res.status(400).json({
+        error:
+          "Issue description is required for AI investigation",
+      });
+    }
+
+    // ==========================================
+    // RUN RAG + AI INVESTIGATION
+    // ==========================================
+
+    const investigationResult =
+      await investigateIssue({
+        title:
+          issue.title || "Untitled Issue",
+
+        description:
+          issue.description.trim(),
+
+        userId:
+          req.user.id,
+
+        currentIssueId:
+          issue._id,
+      });
+
+    // ==========================================
+    // RESPONSE
+    // ==========================================
+
+    return res.status(200).json({
+      message:
+        "AI issue investigation completed successfully",
+
+      issueId:
+        issue._id,
+
+      investigation:
+        investigationResult,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "AI RAG investigation error:",
+      error
+    );
+
+    return res.status(500).json({
+      error:
+        error.message ||
+        "Failed to investigate issue using AI",
     });
   }
 };

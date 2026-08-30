@@ -10,7 +10,12 @@ const {
   generateEmbedding,
   cosineSimilarity,
 } = require("../services/embeddingService");
-
+const {
+  investigateIssue,
+} = require("../services/investigationAgentService");
+const {
+  generateResolutionRecommendation,
+} = require("../services/resolutionRecommendationService");
 // =====================================================
 // ALLOWED VALUES
 // =====================================================
@@ -1206,6 +1211,7 @@ if (affectedModule !== undefined) {
   }
 };
 
+
 // =====================================================
 // DELETE ISSUE
 // DELETE /api/issues/:id
@@ -1637,6 +1643,150 @@ exports.getAverageResolutionTime = async (req, res) => {
       message:
         "Failed to calculate average resolution time",
       error: error.message,
+    });
+  }
+};
+exports.investigateIssue = async (req, res) => {
+  try {
+    const { issueText, currentIssueId } = req.body;
+
+    console.log("AI Investigation Request:");
+    console.log("issueText:", issueText);
+    console.log("currentIssueId:", currentIssueId);
+    console.log("Authenticated User ID:", req.user?.id);
+
+    if (!currentIssueId) {
+      return res.status(400).json({
+        success: false,
+        message: "currentIssueId is required",
+      });
+    }
+
+    const issue = await Issue.findById(currentIssueId);
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Authenticated user ID not found",
+      });
+    }
+
+    // Run the AI Investigation Agent
+    const investigation = await investigateIssue({
+  title: issue.title,
+  description: issue.description || issue.title,
+  userId: req.user.id,
+  currentIssueId: issue._id.toString(),
+});
+
+    // Save AI investigation in MongoDB
+    issue.aiInvestigation = investigation;
+    await issue.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "AI investigation completed successfully",
+      data: investigation,
+    });
+
+  } catch (error) {
+    console.error("AI Investigation Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+// ========================================
+// AI RESOLUTION RECOMMENDATION
+// ========================================
+
+exports.generateResolutionRecommendation = async (
+  req,
+  res
+) => {
+  try {
+    const {
+      issueId,
+    } = req.body;
+
+    // Validate issue ID
+    if (!issueId) {
+      return res.status(400).json({
+        success: false,
+        message: "Issue ID is required",
+      });
+    }
+
+    // Find the issue
+    const issue = await Issue.findById(
+      issueId
+    );
+
+    if (!issue) {
+      return res.status(404).json({
+        success: false,
+        message: "Issue not found",
+      });
+    }
+
+    // Optional security check:
+    // ensure user can only access their own issue
+    if (
+      issue.reportedBy.toString() !==
+      req.user.id
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "You are not authorized to access this issue",
+      });
+    }
+
+    // Call AI Resolution Recommendation Agent
+    const result =
+      await generateResolutionRecommendation({
+        title: issue.title,
+        description: issue.description,
+        category: issue.category,
+        severity: issue.severity,
+        priority: issue.priority,
+        userId: req.user.id,
+        currentIssueId: issue._id.toString(),
+      });
+
+    // Save AI recommendation in MongoDB
+    issue.aiResolutionRecommendation = result;
+
+    await issue.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "AI resolution recommendation generated successfully",
+      data: result,
+    });
+
+  } catch (error) {
+
+    console.error(
+      "AI Resolution Recommendation Controller Error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Failed to generate AI resolution recommendation",
     });
   }
 };

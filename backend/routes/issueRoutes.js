@@ -1,9 +1,6 @@
 const express = require("express");
-
 const router = express.Router();
-
 const authMiddleware = require("../middleware/authMiddleware");
-
 const {
   createIssue,
   getIssues,
@@ -16,8 +13,8 @@ const {
   getDeveloperWorkload,
   getDefectTrends,
   getAverageResolutionTime,
+  investigateIssue
 } = require("../controllers/issueController");
-
 // =========================================
 // GET ANALYTICS
 // =========================================
@@ -321,5 +318,164 @@ router.get(
   authMiddleware,
   semanticSearch
 );
+/**
+ * @swagger
+ * /api/issues/investigate-ai:
+ *   post:
+ *     summary: Investigate an issue using AI and RAG
+ *     description: Uses Gemini AI, semantic retrieval, RAG context, and duplicate bug detection to investigate an issue.
+ *     tags:
+ *       - Issues
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - issueText
+ *             properties:
+ *               issueText:
+ *                 type: string
+ *                 example: Application crashes when submitting the login form
+ *               currentIssueId:
+ *                 type: string
+ *                 example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: AI investigation completed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: AI investigation failed
+ */
+router.post(
+  "/investigate-ai",
+  authMiddleware,
+  investigateIssue
+);
+/**
+ * @swagger
+ * /api/issues/investigate-ai:
+ *   post:
+ *     summary: Investigate an issue using AI and RAG
+ *     description: Uses Gemini AI, semantic retrieval, RAG context, and duplicate bug detection to investigate an issue.
+ *     tags:
+ *       - Issues
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - issueText
+ *             properties:
+ *               issueText:
+ *                 type: string
+ *                 example: Application crashes when submitting the login form
+ *               currentIssueId:
+ *                 type: string
+ *                 example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: AI investigation completed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: AI investigation failed
+ */
+router.post(
+  "/investigate-ai",
+  authMiddleware,
+  investigateIssue
+);/**
+ * @swagger
+ * /api/issues/investigate-ai:
+ *   post:
+ *     summary: Investigate an issue using AI and RAG
+ *     description: Uses Gemini AI, semantic retrieval, RAG context, and duplicate bug detection to investigate an issue.
+ *     tags:
+ *       - Issues
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - issueText
+ *             properties:
+ *               issueText:
+ *                 type: string
+ *                 example: Application crashes when submitting the login form
+ *               currentIssueId:
+ *                 type: string
+ *                 example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: AI investigation completed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: AI investigation failed
+ */
+router.post(
+  "/investigate-ai",
+  authMiddleware,
+  investigateIssue
+);
 
+/**
+ * @swagger
+ * /api/issues/investigate-ai:
+ *   post:
+ *     summary: Investigate an issue using AI and RAG
+ *     description: Uses Gemini AI, semantic retrieval, RAG context, and duplicate bug detection to investigate an issue.
+ *     tags:
+ *       - Issues
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - issueText
+ *             properties:
+ *               issueText:
+ *                 type: string
+ *                 example: Application crashes when submitting the login form
+ *               currentIssueId:
+ *                 type: string
+ *                 example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: AI investigation completed successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: AI investigation failed
+ */
+router.post(
+  "/investigate-ai",
+  authMiddleware,
+  investigateIssue
+);
 module.exports = router;

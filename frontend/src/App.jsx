@@ -15,7 +15,7 @@ import TeamPage from "./pages/TeamPage";
 import CreateIssueForm from "./pages/CreateIssueForm";
 import ActivityPage from "./pages/ActivityPage";
 import SprintPage from "./pages/SprintPage";
-
+import JoinProjectPage from "./pages/JoinProjectPage";
 import Layout from "./components/Layout";
 
 function App() {
@@ -51,7 +51,10 @@ function App() {
           path="/register"
           element={<RegisterPage />}
         />
-
+        <Route
+  path="/join-project"
+  element={<JoinProjectPage />}
+/>
         {/* ==========================
             MAIN APPLICATION
 

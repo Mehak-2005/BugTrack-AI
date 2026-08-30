@@ -6,6 +6,7 @@ const swaggerUi = require("swagger-ui-express");
 const authRoutes = require("./routes/authRoutes");
 const testRoute = require("./routes/testRoute");
 const issueRoutes = require("./routes/issueRoutes");
+const ragRoutes = require("./routes/ragRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const commentRoutes = require("./routes/commentRoutes");
@@ -14,6 +15,7 @@ const activityRoutes = require("./routes/activityRoutes");
 const sprintRoutes = require("./routes/sprintRoutes");
 const teamMemberRoutes = require("./routes/teamMemberRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const invitationRoutes = require("./routes/invitationRoutes");
 
 const swaggerSpec = require("./config/swagger");
 
@@ -31,6 +33,7 @@ app.use(
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/issues", issueRoutes);
+app.use("/api/rag", ragRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/analytics", analyticsRoutes);
@@ -39,6 +42,7 @@ app.use("/api/attachments", attachmentRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/sprints", sprintRoutes);
 app.use("/api/team", teamMemberRoutes);
+app.use("/api/invitations", invitationRoutes);
 
 // Swagger
 app.use(

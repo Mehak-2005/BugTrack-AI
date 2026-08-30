@@ -2697,3 +2697,294 @@ body {
   transform: none;
   box-shadow: none;
 }
+/* ========================================
+   TEAM MEMBER ACCESS BUTTON
+======================================== */
+
+.team-member-access {
+  margin-top: 24px;
+}
+
+.team-member-button {
+  width: 100%;
+  padding: 14px 18px;
+
+  border: 1px solid #d9a1b0;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #873650;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.team-member-button:hover {
+  background: #f9edf1;
+
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 18px rgba(135, 54, 80, 0.12);
+}
+
+.team-member-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* ========================================
+   TEAM MEMBER MODAL OVERLAY
+======================================== */
+
+.team-member-modal-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(35, 24, 29, 0.58);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 20px;
+
+  z-index: 9999;
+
+  animation: modalFadeIn 0.2s ease;
+}
+
+
+/* ========================================
+   MODAL
+======================================== */
+
+.team-member-modal {
+  position: relative;
+
+  width: 100%;
+
+  max-width: 450px;
+
+  background: #ffffff;
+
+  border-radius: 22px;
+
+  padding: 36px;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 25px 70px rgba(0, 0, 0, 0.28);
+
+  animation: modalSlideIn 0.25s ease;
+}
+
+
+/* ========================================
+   MODAL ANIMATION
+======================================== */
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(20px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+
+/* ========================================
+   CLOSE BUTTON
+======================================== */
+
+.modal-close {
+  position: absolute;
+
+  top: 14px;
+
+  right: 18px;
+
+  width: 36px;
+
+  height: 36px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #76676d;
+
+  font-size: 28px;
+
+  line-height: 1;
+
+  cursor: pointer;
+
+  border-radius: 8px;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #f6edf0;
+
+  color: #873650;
+}
+
+
+/* ========================================
+   MODAL ICON
+======================================== */
+
+.modal-icon {
+  width: 58px;
+
+  height: 58px;
+
+  border-radius: 16px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: #f5dfe6;
+
+  font-size: 25px;
+
+  margin-bottom: 20px;
+}
+
+
+/* ========================================
+   MODAL TITLE
+======================================== */
+
+.team-member-modal h2 {
+  margin: 0 0 8px;
+
+  color: #2c2024;
+
+  font-size: 26px;
+
+  font-weight: 700;
+}
+
+.team-member-modal > p {
+  margin: 0 0 26px;
+
+  color: #75676d;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* ========================================
+   TEAM MEMBER FORM
+======================================== */
+
+.team-member-form {
+  margin-top: 5px;
+}
+
+.team-member-form input {
+  text-transform: uppercase;
+}
+
+
+/* ========================================
+   MODAL CANCEL
+======================================== */
+
+.modal-cancel {
+  width: 100%;
+
+  margin-top: 12px;
+
+  padding: 12px;
+
+  border: none;
+
+  background: transparent;
+
+  color: #873650;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  border-radius: 10px;
+
+  transition:
+    background 0.2s ease;
+}
+
+.modal-cancel:hover {
+  background: #f9edf1;
+}
+
+.modal-cancel:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 600px) {
+
+  .team-member-modal {
+    max-width: 100%;
+
+    padding: 30px 24px;
+
+    border-radius: 18px;
+  }
+
+  .team-member-modal h2 {
+    font-size: 23px;
+  }
+
+}

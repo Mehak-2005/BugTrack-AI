@@ -23,7 +23,7 @@ import {
 import TestCasesModal from "../components/TestCasesModal";
 import DeveloperRecommendationModal from "../components/DeveloperRecommendationModal";
 import ResolutionVerificationModal from "../components/ResolutionVerificationModal";
-
+import AIInvestigationModal from "../components/AIInvestigationModal";
 export default function IssuesPage() {
   const navigate = useNavigate();
 
@@ -83,6 +83,10 @@ const [showVerificationModal, setShowVerificationModal] = useState(false);
 const [verificationLoading, setVerificationLoading] = useState(false);
 const [verificationResult, setVerificationResult] = useState(null);
 const [developerFix, setDeveloperFix] = useState("")
+const [investigationIssue, setInvestigationIssue] = useState(null);
+const [investigationResult, setInvestigationResult] = useState(null);
+const [investigationLoading, setInvestigationLoading] = useState(false);
+const [showInvestigationModal, setShowInvestigationModal] = useState(false);
 const token = localStorage.getItem("token");
 
   // =====================================================
@@ -623,6 +627,7 @@ const deleteComment = async (
       setUpdatingId(null);
     }
   };
+  
 
   // =====================================================
   // DRAG AND DROP
@@ -812,6 +817,53 @@ const analyzeResolution = async (issueId) => {
 
   } finally {
     setResolutionLoadingId(null);
+  }
+};
+const handleInvestigateIssue = async (issue) => {
+  try {
+    setInvestigationIssue(issue);
+    setInvestigationResult(null);
+    setInvestigationLoading(true);
+    setShowInvestigationModal(true);
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `http://localhost:5000/api/ai/investigate/${issue._id}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+        data.error ||
+        "Failed to investigate issue"
+      );
+    }
+
+    setInvestigationResult(data);
+  } catch (error) {
+    console.error(
+      "AI Investigation Error:",
+      error
+    );
+
+    alert(
+      error.message ||
+      "Failed to investigate issue"
+    );
+
+    setShowInvestigationModal(false);
+  } finally {
+    setInvestigationLoading(false);
   }
 };
 
@@ -1905,6 +1957,24 @@ const availableStatusOptions =
   }}
 >
    AI Resolution
+</button>
+<button
+  type="button"
+  onClick={() => handleInvestigateIssue(issue)}
+  disabled={
+    investigationLoading &&
+    investigationIssue?._id === issue._id
+  }
+  style={{
+    ...compactActionButtonStyle,
+    background: "#eee3df",
+    color: "#702f43",
+  }}
+>
+  {investigationLoading &&
+  investigationIssue?._id === issue._id
+    ? "Investigating..."
+    : "🔍 AI Investigation"}
 </button>
  
 
@@ -3024,6 +3094,18 @@ const availableStatusOptions =
         selectedResolutionIssue._id
       );
     }
+  }}
+/>
+
+<AIInvestigationModal
+  open={showInvestigationModal}
+  issue={investigationIssue}
+  result={investigationResult}
+  loading={investigationLoading}
+  onClose={() => {
+    setShowInvestigationModal(false);
+    setInvestigationIssue(null);
+    setInvestigationResult(null);
   }}
 />
 <TestCasesModal

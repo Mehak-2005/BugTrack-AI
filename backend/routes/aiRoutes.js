@@ -9,6 +9,7 @@ const {
   generateTests,
   recommendDeveloper,
   verifyResolution,
+  investigateIssue,
 } = require("../controllers/aiController");
 
 const authMiddleware = require("../middleware/authMiddleware");
@@ -236,9 +237,23 @@ router.post(
  *         schema:
  *           type: string
  *         description: Issue ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - developerFix
+ *             properties:
+ *               developerFix:
+ *                 type: string
+ *                 example: Fixed the discount calculation logic so the coupon is applied before calculating the final order total.
  *     responses:
  *       200:
  *         description: Resolution verification completed successfully
+ *       400:
+ *         description: Invalid resolution data
  *       401:
  *         description: Unauthorized
  *       404:
@@ -246,11 +261,48 @@ router.post(
  *       500:
  *         description: AI service or server error
  */
-
 router.post(
-  "/verify-resolution/:issueId",
+    "/verify-resolution/:issueId",
+    authMiddleware,
+    verifyResolution
+);
+// ==========================================
+// RAG + AI DEFECT INVESTIGATION
+// POST /api/ai/investigate/:issueId
+// ==========================================
+
+/**
+ * @swagger
+ * /api/ai/investigate/{issueId}:
+ *   post:
+ *     summary: Perform AI investigation using RAG and historical issues
+ *     tags:
+ *       - AI Features
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: issueId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Issue ID to investigate
+ *     responses:
+ *       200:
+ *         description: AI investigation completed successfully
+ *       400:
+ *         description: Invalid issue data
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Issue not found
+ *       500:
+ *         description: AI investigation or RAG service error
+ */
+router.post(
+  "/investigate/:issueId",
   authMiddleware,
-  verifyResolution
+  investigateIssue
 );
 
 module.exports = router;

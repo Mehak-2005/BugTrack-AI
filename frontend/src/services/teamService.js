@@ -97,3 +97,16 @@ export const updateAssignedTaskStatus = async (
 
   return res.data;
 };
+// ========================================
+// CREATE PROJECT INVITATION
+// ========================================
+
+export const createInvitation = async (data) => {
+  const res = await axios.post(
+    "http://localhost:5000/api/invitations",
+    data,
+    authHeaders()
+  );
+
+  return res.data;
+};

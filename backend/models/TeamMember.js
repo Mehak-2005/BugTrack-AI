@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 // ========================================
 // ASSIGNED TASK SCHEMA
 // ========================================
-
 const assignedTaskSchema = new mongoose.Schema(
   {
     // ========================================
@@ -85,6 +84,23 @@ const teamMemberSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    // ========================================
+// PROJECT THIS MEMBER BELONGS TO
+// ========================================
+project: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Project",
+  required: true,
+},
+// ========================================
+// USER ACCOUNT OF THIS TEAM MEMBER
+// ========================================
+user: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  default: null,
+},
 
     // ========================================
     // MEMBER NAME

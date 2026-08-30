@@ -1,0 +1,393 @@
+.ai-investigation-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(35, 24, 27, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+
+.ai-investigation-modal {
+  width: min(950px, 96vw);
+  max-height: 92vh;
+  background: #fffaf8;
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(70, 42, 49, 0.28);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-investigation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #702f43, #91465d);
+  color: white;
+}
+
+.ai-investigation-header h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.ai-investigation-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.ai-investigation-close {
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.ai-investigation-body {
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.ai-investigation-loading,
+.ai-investigation-empty {
+  padding: 70px 30px;
+  text-align: center;
+}
+
+.ai-loading-spinner {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 20px;
+  border: 4px solid #eadbd6;
+  border-top-color: #702f43;
+  border-radius: 50%;
+  animation: aiSpin 0.9s linear infinite;
+}
+
+@keyframes aiSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.investigation-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+
+.section-title span {
+  font-size: 19px;
+}
+
+.section-title h3 {
+  margin: 0;
+  color: #702f43;
+  font-size: 16px;
+}
+
+.issue-summary-card,
+.investigation-card,
+.root-cause-card,
+.duplicate-card,
+.risk-card,
+.behavior-card {
+  background: white;
+  border: 1px solid #eadbd6;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.issue-summary-card h4 {
+  margin: 0 0 8px;
+  color: #4d3038;
+  font-size: 15px;
+}
+
+.issue-summary-card p,
+.investigation-card p,
+.root-cause-card p,
+.duplicate-card p,
+.risk-card p,
+.behavior-card p {
+  margin: 0;
+  color: #5d4a50;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.rag-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.rag-stat-card {
+  background: #f4e2e5;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.rag-stat-card strong {
+  display: block;
+  color: #702f43;
+  font-size: 24px;
+}
+
+.rag-stat-card span {
+  display: block;
+  margin-top: 5px;
+  color: #6e555c;
+  font-size: 12px;
+}
+
+.duplicate-status {
+  margin-bottom: 14px;
+}
+
+.duplicate-badge,
+.confidence-badge,
+.risk-badge,
+.issue-id-badge {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 6px 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.duplicate-badge.detected {
+  background: #f7dfe3;
+  color: #8b2639;
+}
+
+.duplicate-badge.not-detected {
+  background: #e3f1e8;
+  color: #28663d;
+}
+
+.duplicate-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.duplicate-details div {
+  background: #faf4f2;
+  padding: 12px;
+  border-radius: 9px;
+}
+
+.duplicate-details strong {
+  display: block;
+  font-size: 11px;
+  color: #80666d;
+  margin-bottom: 5px;
+}
+
+.duplicate-details span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4d3038;
+}
+
+.reasoning-box {
+  border-left: 4px solid #91465d;
+  padding: 10px 14px;
+  background: #faf4f2;
+}
+
+.reasoning-box strong {
+  font-size: 12px;
+  color: #702f43;
+}
+
+.reasoning-box p {
+  margin-top: 5px;
+}
+
+.root-cause-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.root-cause-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.root-cause-header h4 {
+  margin: 0;
+  color: #4d3038;
+  font-size: 14px;
+}
+
+.confidence-badge {
+  background: #f4e2e5;
+  color: #702f43;
+  white-space: nowrap;
+}
+
+.investigation-list {
+  margin: 0;
+  padding: 15px 18px 15px 38px;
+  background: white;
+  border: 1px solid #eadbd6;
+  border-radius: 12px;
+}
+
+.investigation-list li {
+  color: #5d4a50;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.investigation-list li:last-child {
+  margin-bottom: 0;
+}
+
+.action-list li::marker {
+  font-weight: 700;
+  color: #702f43;
+}
+
+.behavior-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.behavior-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.behavior-title h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #4d3038;
+}
+
+.behavior-card.expected {
+  border-left: 4px solid #4b8060;
+}
+
+.behavior-card.actual {
+  border-left: 4px solid #b86a4d;
+}
+
+.risk-card {
+  border-left: 5px solid #b86a4d;
+}
+
+.risk-header {
+  margin-bottom: 10px;
+}
+
+.risk-badge {
+  text-transform: uppercase;
+}
+
+.risk-badge.low {
+  background: #e3f1e8;
+  color: #28663d;
+}
+
+.risk-badge.medium {
+  background: #fff0d9;
+  color: #8a5b18;
+}
+
+.risk-badge.high {
+  background: #f7dfe3;
+  color: #8b2639;
+}
+
+.risk-badge.critical {
+  background: #ead3dc;
+  color: #67152a;
+}
+
+.historical-list {
+  border-left: 4px solid #702f43;
+}
+
+.related-issues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.issue-id-badge {
+  background: #f4e2e5;
+  color: #702f43;
+  font-family: monospace;
+}
+
+.ai-investigation-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #eadbd6;
+  display: flex;
+  justify-content: flex-end;
+  background: #fffaf8;
+}
+
+.ai-investigation-footer button {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 20px;
+  background: #702f43;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ai-investigation-footer button:hover {
+  background: #5c2537;
+}
+
+@media (max-width: 700px) {
+  .ai-investigation-overlay {
+    padding: 10px;
+  }
+
+  .ai-investigation-modal {
+    width: 100%;
+    max-height: 96vh;
+  }
+
+  .ai-investigation-body {
+    padding: 16px;
+  }
+
+  .rag-stats,
+  .duplicate-details,
+  .behavior-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .root-cause-header {
+    flex-direction: column;
+  }
+}

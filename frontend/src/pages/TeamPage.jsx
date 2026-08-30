@@ -2,7 +2,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-
+import axios from "axios";
 import {
   getTeamMembers,
   addTeamMember,
@@ -10,8 +10,16 @@ import {
   updateAssignedTaskStatus,
 } from "../services/teamService";
 
+import { getProjects } from "../services/projectService";
+
+
 function TeamPage() {
   const [members, setMembers] = useState([]);
+  const [projects, setProjects] = useState([]);
+const [generatedPasscode, setGeneratedPasscode] = useState("");
+const [selectedProject, setSelectedProject] =
+  useState("");
+
   const [selectedMember, setSelectedMember] =
   useState(null);
 
@@ -55,6 +63,7 @@ const [updatingTask, setUpdatingTask] =
 
   useEffect(() => {
     loadTeamMembers();
+    loadProjects();
   }, []);
 
   const loadTeamMembers = async () => {
@@ -79,6 +88,41 @@ const [updatingTask, setUpdatingTask] =
       setLoading(false);
     }
   };
+
+  // ==========================================
+// LOAD PROJECTS
+// ==========================================
+
+const loadProjects = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      "http://localhost:5000/api/projects",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setProjects(
+      Array.isArray(response.data)
+        ? response.data
+        : []
+    );
+
+  } catch (error) {
+    console.error(
+      "Error loading projects:",
+      error
+    );
+
+    setError(
+      error.response?.data?.message ||
+        "Unable to load projects."
+    );
+  }
+};
 
   // ==========================================
   // HANDLE INPUT CHANGE
@@ -107,6 +151,10 @@ const [updatingTask, setUpdatingTask] =
       alert("Please select a role.");
       return;
     }
+    if (!selectedProject) {
+  alert("Please select a project.");
+  return;
+}
 
     try {
       setSaving(true);
@@ -148,10 +196,17 @@ const [updatingTask, setUpdatingTask] =
         experience: experienceValue,
         workload: Number(formData.workload),
         email: formData.email.trim(),
+        projectId: selectedProject,
       };
 
       const response =
         await addTeamMember(memberData);
+
+      // Show the generated passcode returned by the backend
+      // Show the generated passcode returned by the backend
+if (response?.invitation?.passcode) {
+  setGeneratedPasscode(response.invitation.passcode);
+}
 
       // Add returned MongoDB member
       setMembers((prevMembers) => [
@@ -168,6 +223,7 @@ const [updatingTask, setUpdatingTask] =
         workload: 40,
         email: "",
       });
+      setSelectedProject("");
 
       setShowForm(false);
 
@@ -549,7 +605,7 @@ const handleTaskStatusUpdate = async () => {
             <div>
 
               <h2 style={styles.formTitle}>
-                Add Team Member
+                Invite Team Member
               </h2>
 
               <p style={styles.formSubtitle}>
@@ -566,7 +622,41 @@ const handleTaskStatusUpdate = async () => {
           <form onSubmit={handleAddMember}>
 
             <div style={styles.formGrid}>
+              {/* PROJECT */}
 
+<div style={styles.field}>
+  <label style={styles.label}>
+    <span>📁</span>
+    Project
+    <span style={styles.required}>*</span>
+  </label>
+
+  <select
+    value={selectedProject}
+    onChange={(e) =>
+      setSelectedProject(e.target.value)
+    }
+    style={styles.input}
+    disabled={saving}
+  >
+    <option value="">
+      Select Project
+    </option>
+
+    {projects.map((project) => (
+      <option
+        key={project._id}
+        value={project._id}
+      >
+        {project.projectName}
+      </option>
+    ))}
+  </select>
+   <div style={styles.helper}>
+    Select the project this member will
+    belong to.
+  </div>
+</div>
               {/* NAME */}
 
               <div style={styles.field}>
@@ -590,8 +680,6 @@ const handleTaskStatusUpdate = async () => {
                 />
 
               </div>
-
-
               {/* ROLE */}
 
               <div style={styles.field}>
@@ -1029,6 +1117,44 @@ const handleTaskStatusUpdate = async () => {
                 </div>
 
               )}
+              {/* PROJECT PASSCODE */}
+
+{member.passcode && (
+  <div style={styles.passcodeCard}>
+    <div style={styles.passcodeCardLabel}>
+      🔐 Project Passcode
+    </div>
+
+    <div style={styles.passcodeCardRow}>
+      <span style={styles.passcodeCardValue}>
+        {member.passcode}
+      </span>
+
+      <button
+        type="button"
+        style={styles.copyCardPasscode}
+        onClick={async (e) => {
+          e.stopPropagation();
+
+          try {
+            await navigator.clipboard.writeText(
+              member.passcode
+            );
+
+            alert("Passcode copied successfully.");
+          } catch (error) {
+            console.error(
+              "Unable to copy passcode:",
+              error
+            );
+          }
+        }}
+      >
+        📋 Copy
+      </button>
+    </div>
+  </div>
+)}
 
 
               {/* DELETE */}
@@ -1243,6 +1369,71 @@ const handleTaskStatusUpdate = async () => {
   </div>
 
 )}
+{/* ==========================================
+    GENERATED PASSCODE
+========================================== */}
+
+{generatedPasscode && (
+  <div style={styles.passcodeOverlay}>
+    <div style={styles.passcodeModal}>
+
+      <button
+        type="button"
+        style={styles.closePasscode}
+        onClick={() => setGeneratedPasscode("")}
+      >
+        ×
+      </button>
+
+      <div style={styles.passcodeIcon}>
+        🔐
+      </div>
+
+      <h2 style={styles.passcodeTitle}>
+        Team Member Added Successfully
+      </h2>
+
+      <p style={styles.passcodeText}>
+        Share this passcode with the team member.
+        They can use it to access the assigned project.
+      </p>
+
+      <div style={styles.passcodeLabel}>
+        PROJECT LOGIN PASSCODE
+      </div>
+
+      <div style={styles.passcodeBox}>
+        {generatedPasscode}
+      </div>
+
+      <div style={styles.passcodeActions}>
+        <button
+          type="button"
+          style={styles.copyPasscodeButton}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(generatedPasscode);
+              alert("Passcode copied successfully.");
+            } catch (error) {
+              console.error("Unable to copy passcode:", error);
+            }
+          }}
+        >
+          📋 Copy Passcode
+        </button>
+
+        <button
+          type="button"
+          style={styles.donePasscodeButton}
+          onClick={() => setGeneratedPasscode("")}
+        >
+          Done
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
 
     </div>
   );
@@ -1261,6 +1452,108 @@ const styles = {
     background:
       "linear-gradient(135deg, #fff9f7 0%, #fdf4f6 100%)",
     boxSizing: "border-box",
+  },
+
+  passcodeOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0, 0, 0, 0.55)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 99999,
+    padding: "20px",
+    boxSizing: "border-box",
+  },
+
+  passcodeModal: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "460px",
+    background: "#ffffff",
+    borderRadius: "20px",
+    padding: "32px",
+    textAlign: "center",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+    boxSizing: "border-box",
+  },
+
+  closePasscode: {
+    position: "absolute",
+    top: "12px",
+    right: "16px",
+    border: "none",
+    background: "transparent",
+    fontSize: "28px",
+    color: "#702f43",
+    cursor: "pointer",
+    lineHeight: 1,
+  },
+
+  passcodeIcon: {
+    fontSize: "42px",
+    marginBottom: "10px",
+  },
+
+  passcodeTitle: {
+    margin: "0 0 10px",
+    color: "#702f43",
+    fontSize: "22px",
+    fontWeight: "750",
+  },
+
+  passcodeText: {
+    color: "#806c72",
+    fontSize: "14px",
+    lineHeight: "1.6",
+    marginBottom: "22px",
+  },
+
+  passcodeLabel: {
+    fontSize: "11px",
+    fontWeight: "700",
+    letterSpacing: "1px",
+    color: "#9a526a",
+    marginBottom: "8px",
+  },
+
+  passcodeBox: {
+    background: "#f4dfe6",
+    borderRadius: "14px",
+    padding: "18px",
+    color: "#702f43",
+    fontSize: "27px",
+    fontWeight: "800",
+    letterSpacing: "4px",
+    marginBottom: "20px",
+    wordBreak: "break-all",
+  },
+
+  passcodeActions: {
+    display: "flex",
+    justifyContent: "center",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  copyPasscodeButton: {
+    border: "none",
+    borderRadius: "9px",
+    padding: "12px 20px",
+    background: "#702f43",
+    color: "#ffffff",
+    fontWeight: "700",
+    cursor: "pointer",
+  },
+
+  donePasscodeButton: {
+    border: "1px solid #702f43",
+    borderRadius: "9px",
+    padding: "12px 20px",
+    background: "#ffffff",
+    color: "#702f43",
+    fontWeight: "700",
+    cursor: "pointer",
   },
 
   // ================================================
@@ -1862,6 +2155,48 @@ noAssignedTasks: {
     background: "#faf5f6",
     borderRadius: "8px",
   },
+  passcodeCard: {
+  marginTop: "14px",
+  padding: "12px 14px",
+  background: "#fff4f7",
+  border: "1px solid #ead1d9",
+  borderRadius: "10px",
+},
+
+passcodeCardLabel: {
+  fontSize: "11px",
+  fontWeight: "700",
+  color: "#9a526a",
+  letterSpacing: "0.8px",
+  marginBottom: "7px",
+  textTransform: "uppercase",
+},
+
+passcodeCardRow: {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "10px",
+},
+
+passcodeCardValue: {
+  fontSize: "18px",
+  fontWeight: "800",
+  letterSpacing: "3px",
+  color: "#702f43",
+  fontFamily: "monospace",
+},
+
+copyCardPasscode: {
+  border: "none",
+  borderRadius: "7px",
+  padding: "7px 11px",
+  background: "#702f43",
+  color: "#ffffff",
+  fontSize: "12px",
+  fontWeight: "700",
+  cursor: "pointer",
+},
 
   // ================================================
   // DELETE
@@ -2120,6 +2455,7 @@ noAssignedTasks: {
     fontSize: "13px",
   },
 };
+
 
 
 export default TeamPage;

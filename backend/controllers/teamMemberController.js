@@ -1,5 +1,7 @@
 const TeamMember = require("../models/TeamMember");
 const Issue = require("../models/Issue");
+const Project = require("../models/Project");
+const crypto = require("crypto");
 
 // ========================================
 // CALCULATE WORKLOAD
@@ -73,6 +75,7 @@ const addTeamMember = async (req, res) => {
       skills,
       experience,
       email,
+      projectId,
     } = req.body;
 
     // ========================================
@@ -85,17 +88,49 @@ const addTeamMember = async (req, res) => {
       });
     }
 
+    if (!projectId) {
+      return res.status(400).json({
+        message: "Project ID is required",
+      });
+    }
+   const project = await Project.findOne({
+  _id: projectId,
+  createdBy: req.user.id,
+});
+
+if (!project) {
+  return res.status(404).json({
+    message:
+      "Project not found or you do not have permission to use it",
+  });
+}
+    
+    // ========================================
+    // GENERATE UNIQUE PASSCODE
+    // ========================================
+
+    const passcode = crypto
+      .randomBytes(4)
+      .toString("hex")
+      .toUpperCase();
+      // ========================================
+    // PASSCODE EXPIRY
+    // 24 HOURS
+    // ========================================
+
+    const passcodeExpiresAt = new Date(
+      Date.now() + 24 * 60 * 60 * 1000
+    );
+
     // ========================================
     // CREATE TEAM MEMBER
     // ========================================
 
     const member = await TeamMember.create({
       owner: req.user.id,
-
+      project: project._id,
       name: name.trim(),
-
       role,
-
       skills: Array.isArray(skills)
         ? skills
         : skills
@@ -113,6 +148,15 @@ const addTeamMember = async (req, res) => {
       email: email?.trim() || "",
 
       assignedTasks: [],
+    // ========================================
+      // INVITATION DETAILS
+      // ========================================
+
+      passcode,
+
+      passcodeExpiresAt,
+
+      joined: false,
     });
 
     // ========================================
@@ -122,7 +166,12 @@ const addTeamMember = async (req, res) => {
     res.status(201).json({
       message: "Team member added successfully",
       member,
+       invitation: {
+        passcode,
+        expiresAt: passcodeExpiresAt,
+      },
     });
+    
   } catch (error) {
     console.error(
       "Error adding team member:",
@@ -131,6 +180,7 @@ const addTeamMember = async (req, res) => {
 
     res.status(500).json({
       message: "Failed to add team member",
+      error: error.message,
     });
   }
 };
@@ -519,7 +569,112 @@ const deleteTeamMember = async (
     });
   }
 };
+// ========================================
+// GET MY PROJECT
+// TEAM MEMBER DASHBOARD
+// ========================================
 
+exports.getMyProject = async (req, res) => {
+  try {
+    // --------------------------------------
+    // CHECK TEAM MEMBER ID FROM JWT
+    // --------------------------------------
+
+    const teamMemberId = req.user.teamMemberId;
+
+    if (!teamMemberId) {
+      return res.status(401).json({
+        success: false,
+        message: "Team member information not found in token",
+      });
+    }
+
+    // --------------------------------------
+    // FIND TEAM MEMBER
+    // --------------------------------------
+
+    const teamMember = await TeamMember.findById(
+      teamMemberId
+    )
+      .populate("project")
+      .populate("owner", "name email");
+
+    // --------------------------------------
+    // TEAM MEMBER NOT FOUND
+    // --------------------------------------
+
+    if (!teamMember) {
+      return res.status(404).json({
+        success: false,
+        message: "Team member not found",
+      });
+    }
+
+    // --------------------------------------
+    // CHECK PROJECT
+    // --------------------------------------
+
+    if (!teamMember.project) {
+      return res.status(404).json({
+        success: false,
+        message: "No project assigned to this team member",
+      });
+    }
+
+    // --------------------------------------
+    // FIND PROJECT ISSUES
+    // --------------------------------------
+
+    const Issue = require("../models/Issue");
+
+    const issues = await Issue.find({
+      project: teamMember.project._id,
+    }).sort({
+      createdAt: -1,
+    });
+
+    // --------------------------------------
+    // RESPONSE
+    // --------------------------------------
+
+    return res.status(200).json({
+      success: true,
+
+      teamMember: {
+        id: teamMember._id,
+        name: teamMember.name,
+        email: teamMember.email,
+        role: teamMember.role,
+        skills: teamMember.skills,
+        experience: teamMember.experience,
+        workload: teamMember.workload,
+      },
+
+      project: {
+        id: teamMember.project._id,
+        projectName:
+          teamMember.project.projectName,
+        description:
+          teamMember.project.description,
+      },
+
+      issues: issues,
+    });
+
+  } catch (error) {
+    console.error(
+      "Get team member project error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Server error while retrieving team member project",
+      error: error.message,
+    });
+  }
+};
 // ========================================
 // EXPORT
 // ========================================
@@ -530,4 +685,5 @@ module.exports = {
   assignIssueToTeamMember,
   updateAssignedTaskStatus,
   deleteTeamMember,
+  getMyProject: exports.getMyProject,
 };
