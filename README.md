@@ -189,6 +189,7 @@ cd backend
 npm install
 ---
 ### 3. Create a .env file in the backend/ directory:
+---
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/defectiq
 JWT_SECRET=your_jwt_secret_key
@@ -196,10 +197,11 @@ GEMINI_API_KEY=your_google_gemini_api_key
 ---
 
 ### 4.Frontend Configuration
+---
 cd frontend
 npm install
 npm run dev
-# Application interface accessible at http://localhost:5173
+Application interface accessible at http://localhost:5173
 ---
 
 ## End-to-End Demo Workflow
