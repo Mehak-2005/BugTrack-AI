@@ -1,5 +1,4 @@
 const express = require("express");
-
 const router = express.Router();
 
 const {
@@ -7,9 +6,13 @@ const {
   createSprint,
   updateSprint,
   deleteSprint,
+  getSprintHealthRadar,
+  getSprintReleaseNotes,
+
 } = require("../controllers/sprintController");
 
-const authMiddleware = require("../middleware/authMiddleware");
+// Destructure protect and alias it as authMiddleware
+const { protect: authMiddleware } = require("../middleware/authMiddleware");
 
 // =========================================
 // GET ALL SPRINTS
@@ -32,7 +35,6 @@ const authMiddleware = require("../middleware/authMiddleware");
  *       500:
  *         description: Server error
  */
-
 router.get("/", authMiddleware, getSprints);
 
 // =========================================
@@ -76,7 +78,6 @@ router.get("/", authMiddleware, getSprints);
  *       500:
  *         description: Server error
  */
-
 router.post("/", authMiddleware, createSprint);
 
 // =========================================
@@ -126,7 +127,6 @@ router.post("/", authMiddleware, createSprint);
  *       500:
  *         description: Server error
  */
-
 router.put("/:id", authMiddleware, updateSprint);
 
 // =========================================
@@ -159,7 +159,36 @@ router.put("/:id", authMiddleware, updateSprint);
  *       500:
  *         description: Server error
  */
-
 router.delete("/:id", authMiddleware, deleteSprint);
 
+// =========================================
+// AI SPRINT HEALTH RADAR
+// =========================================
+
+/**
+ * @swagger
+ * /api/sprints/{id}/health-radar:
+ *   get:
+ *     summary: Get AI Sprint Health Score and Delivery Risk
+ *     tags:
+ *       - Sprints
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Sprint ID
+ *     responses:
+ *       200:
+ *         description: Sprint radar analysis generated
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get("/:id/health-radar", authMiddleware, getSprintHealthRadar);
+router.get("/:id/release-notes", authMiddleware, getSprintReleaseNotes);
 module.exports = router;

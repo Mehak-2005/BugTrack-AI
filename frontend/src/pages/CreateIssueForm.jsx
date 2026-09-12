@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 import { analyzeBug } from "../services/issueService";
-
+import { getSprints } from "../services/sprintService";
 export default function CreateIssueForm() {
   const navigate = useNavigate();
 
@@ -38,7 +38,8 @@ const [affectedModule, setAffectedModule] = useState("");
 
   const [similarIssues, setSimilarIssues] = useState([]);
   const [showSimilarPopup, setShowSimilarPopup] = useState(false);
-
+const [sprints, setSprints] = useState([]);
+  const [sprint, setSprint] = useState(""); // <--- ADD THIS
   const token = localStorage.getItem("token");
 
   // ==========================================
@@ -83,8 +84,17 @@ const [affectedModule, setAffectedModule] = useState("");
         }
       }
     };
+    const fetchSprints = async () => {
+      try {
+        const sprintData = await getSprints();
+        setSprints(Array.isArray(sprintData) ? sprintData : []);
+      } catch (err) {
+        console.error("Failed to load sprints:", err);
+      }
+    };
 
     fetchProjects();
+    fetchSprints();
   }, [token, navigate]);
 
   // ==========================================
@@ -312,9 +322,10 @@ projectName:
           severity,
           category,
           project,
+          sprint: sprint || null,
           report,
           defectType,
-affectedModule,
+          affectedModule,
 
           // ====================================
           // DUPLICATE OVERRIDE
@@ -509,6 +520,7 @@ setAffectedModule("");
             value={project}
             onChange={(e) => {
               setProject(e.target.value);
+              setSprint("");
               clearReport();
             }}
             style={inputStyle}
@@ -541,6 +553,29 @@ setAffectedModule("");
             </p>
           )}
 
+{/* ==========================================
+              SPRINT SELECTOR (NEW)
+          ========================================== */}
+          <label style={labelStyle}>
+            Sprint (Optional)
+          </label>
+
+          <select
+            value={sprint}
+            onChange={(e) => setSprint(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="">
+              -- Select a sprint (or leave unassigned) --
+            </option>
+            {sprints
+              .filter((s) => !project || (s.project?._id || s.project) === project)
+              .map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name} ({new Date(item.startDate).toLocaleDateString()} - {new Date(item.endDate).toLocaleDateString()})
+                </option>
+              ))}
+          </select>
           {/* TITLE */}
 
           <label style={labelStyle}>

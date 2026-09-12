@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import SprintModal from "../components/SprintModal";
+import SprintRadarModal from "../components/SprintRadarModal";
 
 import {
   getSprints,
   createSprint,
   updateSprint,
   deleteSprint,
+  getSprintHealthRadar,
+  getSprintReleaseNotes,
 } from "../services/sprintService";
 
 import { getProjects } from "../services/projectService";
-
+import ReleaseNotesModal from "../components/ReleaseNotesModal"; 
 export default function SprintPage() {
   // ========================================
   // STATE
@@ -19,16 +22,22 @@ export default function SprintPage() {
   const [projects, setProjects] = useState([]);
 
   const [creating, setCreating] = useState(false);
-  const [showSprintModal, setShowSprintModal] =
-    useState(false);
+  const [showSprintModal, setShowSprintModal] = useState(false);
 
   // Used to determine Create vs Edit mode
   const [editing, setEditing] = useState(false);
 
   // Stores the sprint currently being edited
-  const [editingSprintId, setEditingSprintId] =
-    useState(null);
+  const [editingSprintId, setEditingSprintId] = useState(null);
 
+  // AI Sprint Radar Modal State
+  const [radarOpen, setRadarOpen] = useState(false);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [radarData, setRadarData] = useState(null);
+const [notesOpen, setNotesOpen] = useState(false);
+const [notesLoading, setNotesLoading] = useState(false);
+const [notesData, setNotesData] = useState(null);
+const [selectedSprintName, setSelectedSprintName] = useState("");
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -66,18 +75,9 @@ export default function SprintPage() {
   const fetchProjects = async () => {
     try {
       const data = await getProjects();
-
-      console.log(
-        "Projects API Response:",
-        data
-      );
-
       setProjects(data);
     } catch (err) {
-      console.error(
-        "Failed to fetch projects:",
-        err
-      );
+      console.error("Failed to fetch projects:", err);
     }
   };
 
@@ -134,11 +134,7 @@ export default function SprintPage() {
 
       await fetchSprints();
     } catch (err) {
-      console.error(
-        "Create sprint error:",
-        err
-      );
-
+      console.error("Create sprint error:", err);
       alert("Failed to create sprint.");
     } finally {
       setCreating(false);
@@ -151,31 +147,18 @@ export default function SprintPage() {
 
   const handleOpenEdit = (sprint) => {
     setEditing(true);
-
     setEditingSprintId(sprint._id);
 
     setForm({
       name: sprint.name || "",
       description: sprint.description || "",
-
-      // Convert MongoDB date to YYYY-MM-DD
       startDate: sprint.startDate
-        ? new Date(sprint.startDate)
-            .toISOString()
-            .split("T")[0]
+        ? new Date(sprint.startDate).toISOString().split("T")[0]
         : "",
-
       endDate: sprint.endDate
-        ? new Date(sprint.endDate)
-            .toISOString()
-            .split("T")[0]
+        ? new Date(sprint.endDate).toISOString().split("T")[0]
         : "",
-
-      // project is populated, so we need its _id
-      project:
-        sprint.project?._id ||
-        sprint.project ||
-        "",
+      project: sprint.project?._id || sprint.project || "",
     });
 
     setShowSprintModal(true);
@@ -205,10 +188,7 @@ export default function SprintPage() {
     try {
       setCreating(true);
 
-      await updateSprint(
-        editingSprintId,
-        form
-      );
+      await updateSprint(editingSprintId, form);
 
       alert("Sprint updated successfully.");
 
@@ -218,11 +198,7 @@ export default function SprintPage() {
 
       await fetchSprints();
     } catch (err) {
-      console.error(
-        "Update sprint error:",
-        err
-      );
-
+      console.error("Update sprint error:", err);
       alert("Failed to update sprint.");
     } finally {
       setCreating(false);
@@ -237,7 +213,6 @@ export default function SprintPage() {
     if (creating) return;
 
     setShowSprintModal(false);
-
     resetForm();
   };
 
@@ -246,38 +221,61 @@ export default function SprintPage() {
   // ========================================
 
   const handleDeleteSprint = async (id) => {
-    if (
-      !window.confirm(
-        "Delete this sprint?"
-      )
-    ) {
+    if (!window.confirm("Delete this sprint?")) {
       return;
     }
 
     try {
       await deleteSprint(id);
-
       await fetchSprints();
     } catch (err) {
-      console.error(
-        "Delete sprint error:",
-        err
-      );
-
+      console.error("Delete sprint error:", err);
       alert("Failed to delete sprint.");
     }
   };
+
+  // ========================================
+  // OPEN AI SPRINT RADAR
+  // ========================================
+
+  const handleOpenRadar = async (sprintId) => {
+    setRadarData(null);
+    setRadarOpen(true);
+    setRadarLoading(true);
+
+    try {
+      const data = await getSprintHealthRadar(sprintId);
+      setRadarData(data);
+    } catch (err) {
+      console.error("Sprint health radar error:", err);
+      alert(err.message || "Failed to analyze sprint health.");
+    } finally {
+      setRadarLoading(false);
+    }
+  };
+  const handleOpenReleaseNotes = async (sprint) => {
+  setSelectedSprintName(sprint.name);
+  setNotesData(null);
+  setNotesOpen(true);
+  setNotesLoading(true);
+
+  try {
+    const data = await getSprintReleaseNotes(sprint._id);
+    setNotesData(data);
+  } catch (err) {
+    console.error("Release notes error:", err);
+    alert(err.message || "Failed to generate release notes");
+  } finally {
+    setNotesLoading(false);
+  }
+};
 
   // ========================================
   // UI
   // ========================================
 
   return (
-    <div
-      style={{
-        padding: "40px",
-      }}
-    >
+    <div style={{ padding: "40px" }}>
       {/* ========================================
           HEADER
       ======================================== */}
@@ -306,8 +304,7 @@ export default function SprintPage() {
             padding: "14px 24px",
             border: "none",
             borderRadius: "12px",
-            background:
-              "linear-gradient(135deg,#702f43,#91465d)",
+            background: "linear-gradient(135deg,#702f43,#91465d)",
             color: "#fff",
             fontWeight: "700",
             cursor: "pointer",
@@ -342,12 +339,10 @@ export default function SprintPage() {
               borderRadius: "20px",
               padding: "30px",
               marginBottom: "25px",
-              boxShadow:
-                "0 10px 30px rgba(0,0,0,.08)",
+              boxShadow: "0 10px 30px rgba(0,0,0,.08)",
             }}
           >
             {/* SPRINT NAME */}
-
             <h2
               style={{
                 marginTop: 0,
@@ -358,17 +353,9 @@ export default function SprintPage() {
             </h2>
 
             {/* DESCRIPTION */}
-
-            <p
-              style={{
-                color: "#555",
-              }}
-            >
-              {sprint.description}
-            </p>
+            <p style={{ color: "#555" }}>{sprint.description}</p>
 
             {/* PROJECT + DATES */}
-
             <p
               style={{
                 color: "#666",
@@ -376,18 +363,11 @@ export default function SprintPage() {
                 fontWeight: "600",
               }}
             >
-              Project:{" "}
-              {sprint.project?.projectName ||
-                "No Project"}
-              {"  "}
-              📅{" "}
-              {new Date(
-                sprint.startDate
-              ).toLocaleDateString()}
+              Project: {sprint.project?.projectName || "No Project"}
+              {"   "}
+              📅 {new Date(sprint.startDate).toLocaleDateString()}
               {" - "}
-              {new Date(
-                sprint.endDate
-              ).toLocaleDateString()}
+              {new Date(sprint.endDate).toLocaleDateString()}
             </p>
 
             {/* ========================================
@@ -399,14 +379,12 @@ export default function SprintPage() {
                 display: "flex",
                 gap: "12px",
                 marginTop: "15px",
+                flexWrap: "wrap",
               }}
             >
               {/* EDIT */}
-
               <button
-                onClick={() =>
-                  handleOpenEdit(sprint)
-                }
+                onClick={() => handleOpenEdit(sprint)}
                 style={{
                   padding: "10px 18px",
                   border: "none",
@@ -421,13 +399,8 @@ export default function SprintPage() {
               </button>
 
               {/* DELETE */}
-
               <button
-                onClick={() =>
-                  handleDeleteSprint(
-                    sprint._id
-                  )
-                }
+                onClick={() => handleDeleteSprint(sprint._id)}
                 style={{
                   padding: "10px 18px",
                   border: "none",
@@ -440,15 +413,52 @@ export default function SprintPage() {
               >
                 Delete Sprint
               </button>
+
+              {/* AI SPRINT RADAR */}
+              <button
+  onClick={() => handleOpenRadar(sprint._id)}
+  style={{
+    padding: "10px 18px",
+    border: "none",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #702f43 0%, #3b1421 100%)",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "14px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    boxShadow: "0 4px 12px rgba(112, 47, 67, 0.25)",
+    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  }}
+  onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+  onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+>
+   AI Health Radar
+</button>
+<button
+  onClick={() => handleOpenReleaseNotes(sprint)}
+  style={{
+    padding: "10px 18px",
+    border: "none",
+    borderRadius: "10px",
+    background: "#4b5563",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "600",
+  }}
+>
+   Release Notes
+</button>
             </div>
           </div>
         ))
       )}
 
       {/* ========================================
-          SPRINT MODAL
+          SPRINT CREATE / EDIT MODAL
       ======================================== */}
-
       <SprintModal
         open={showSprintModal}
         onClose={handleCloseModal}
@@ -460,6 +470,23 @@ export default function SprintPage() {
         creating={creating}
         editing={editing}
       />
+
+      {/* ========================================
+          AI SPRINT HEALTH RADAR MODAL
+      ======================================== */}
+      <SprintRadarModal
+        isOpen={radarOpen}
+        onClose={() => setRadarOpen(false)}
+        radarData={radarData}
+        loading={radarLoading}
+      />
+      <ReleaseNotesModal
+  isOpen={notesOpen}
+  onClose={() => setNotesOpen(false)}
+  notesData={notesData}
+  loading={notesLoading}
+  sprintName={selectedSprintName}
+/>
     </div>
   );
 }

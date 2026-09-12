@@ -153,3 +153,25 @@ export const getAverageResolutionTime = async () => {
 
   return res.data;
 };
+export const getIssueReproductionScript = async (issueId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`http://localhost:5000/api/issues/${issueId}/reproduce-script`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to generate reproduction script");
+  }
+  return data.data;
+};
+export const getDefectHotspots = async () => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get("http://localhost:5000/api/issues/analytics/hotspots", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data.data;
+};

@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
+const { getIssueReproductionScript } = require("../controllers/issueController");
+const { calculateDefectHotspots } = require("../services/hotspotService");
+const auth = require("../middleware/authMiddleware");
 const {
   createIssue,
   getIssues,
@@ -478,4 +481,16 @@ router.post(
   authMiddleware,
   investigateIssue
 );
+router.get("/:id/reproduce-script", auth, getIssueReproductionScript);
+
+router.get("/analytics/hotspots", auth, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const data = await calculateDefectHotspots(userId);
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error("Hotspots route error:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 module.exports = router;

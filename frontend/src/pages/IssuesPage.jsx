@@ -24,6 +24,8 @@ import TestCasesModal from "../components/TestCasesModal";
 import DeveloperRecommendationModal from "../components/DeveloperRecommendationModal";
 import ResolutionVerificationModal from "../components/ResolutionVerificationModal";
 import AIInvestigationModal from "../components/AIInvestigationModal";
+import AutoReproduceModal from "../components/AutoReproduceModal";
+import { getIssueReproductionScript } from "../services/issueService";
 export default function IssuesPage() {
   const navigate = useNavigate();
 
@@ -87,6 +89,10 @@ const [investigationIssue, setInvestigationIssue] = useState(null);
 const [investigationResult, setInvestigationResult] = useState(null);
 const [investigationLoading, setInvestigationLoading] = useState(false);
 const [showInvestigationModal, setShowInvestigationModal] = useState(false);
+const [reproduceModalOpen, setReproduceModalOpen] = useState(false);
+const [reproduceLoading, setReproduceLoading] = useState(false);
+const [scriptData, setScriptData] = useState(null);
+const [selectedIssueTitle, setSelectedIssueTitle] = useState("");
 const token = localStorage.getItem("token");
 
   // =====================================================
@@ -649,6 +655,7 @@ const deleteComment = async (
       "In Progress",
       "In Review",
       "Resolved",
+      "Closed",
     ];
 
     if (!validStatuses.includes(newStatus)) {
@@ -1100,6 +1107,21 @@ const deleteAttachment = async (issueId, attachmentId) => {
 
         return matchesSearch && matchesPriority;
   });
+  const handleOpenReproduce = async (issue) => {
+  setSelectedIssueTitle(issue.title);
+  setScriptData(null);
+  setReproduceModalOpen(true);
+  setReproduceLoading(true);
+
+  try {
+    const data = await getIssueReproductionScript(issue._id);
+    setScriptData(data);
+  } catch (err) {
+    alert(err.message || "Failed to generate script");
+  } finally {
+    setReproduceLoading(false);
+  }
+};
 
   // =====================================================
   // KANBAN COLUMNS
@@ -1121,6 +1143,9 @@ const deleteAttachment = async (issueId, attachmentId) => {
   const resolvedIssues = filteredIssues.filter(
     (issue) => issue.status === "Resolved"
   );
+  const closedIssues = filteredIssues.filter(
+  (issue) => issue.status === "Closed"
+);
 
   // =====================================================
   // STATISTICS
@@ -1147,6 +1172,9 @@ console.log("TOTAL ISSUES:", issues.length);
   const totalResolved = issues.filter(
     (issue) => issue.status === "Resolved"
   ).length;
+  const totalClosed = issues.filter(
+  (issue) => issue.status === "Closed"
+).length;
 
   // =====================================================
   // PRIORITY COLORS
@@ -1293,7 +1321,8 @@ console.log("TOTAL ISSUES:", issues.length);
   Open: ["Open", "In Progress"],
   "In Progress": ["In Progress", "In Review"],
   "In Review": ["In Review", "Resolved"],
-  Resolved: ["Resolved"],
+  Resolved: ["Resolved", "Closed"],
+  Closed: ["Closed"],
 };
 
 const availableStatusOptions =
@@ -1418,7 +1447,7 @@ const availableStatusOptions =
         fontWeight: "600",
       }}
     >
-      ✏️ Edit Details
+       Edit Details
     </button>
       {/* AI REPORT BUTTON */}
 
@@ -1440,7 +1469,7 @@ const availableStatusOptions =
       fontSize: "12px",
     }}
   >
-  ✨ View AI Report
+   View AI Report
   </button>
 )}
      
@@ -1569,47 +1598,7 @@ const availableStatusOptions =
             ? `${issue.description.substring(0,80)}...`
             : issue.description}
         </p>
-
-        {/* BADGES */}
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "7px",
-            flexWrap: "wrap",
-            marginBottom: "13px",
-          }}
-        >
-          <span
-            style={{
-              ...getPriorityStyle(priority),
-              ...badgeStyle,
-            }}
-          >
-            {priority} Priority
-          </span>
-
-          <span
-            style={{
-              ...getSeverityStyle(severity),
-              ...badgeStyle,
-            }}
-          >
-            {severity} Severity
-          </span>
-
-          <span
-            style={{
-              background: "#f1e5e3",
-              color: "#702f43",
-              ...badgeStyle,
-            }}
-          >
-            {category}
-          </span>
-        </div>
-
+        
         {/* DATE */}
 
         <div
@@ -1901,10 +1890,12 @@ const availableStatusOptions =
 <div
   style={{
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "8px",
-    marginTop: "4px",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "6px",
+    marginTop: "3px",
     width: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
   }}
 >
 
@@ -1913,18 +1904,21 @@ const availableStatusOptions =
   onClick={() => generateTestCases(issue._id)}
   disabled={generatingTestCases}
   style={{
-    width: "100%",
-    padding: "8px",
-    marginTop: "6px",
-    border: "none",
-    borderRadius: "7px",
-    background: "#7a2948",
-    color: "white",
-    fontWeight: "600",
-    cursor: generatingTestCases
-      ? "not-allowed"
-      : "pointer",
-  }}
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  padding: "8px 6px",
+  marginTop: "6px",
+  border: "none",
+  borderRadius: "7px",
+  background: "#7a2948",
+  color: "white",
+  fontWeight: "600",
+  cursor: generatingTestCases
+    ? "not-allowed"
+    : "pointer",
+  overflowWrap: "anywhere",
+}}
 >
    {generatingTestCases
     ? "Generating Test Cases..."
@@ -1945,19 +1939,45 @@ const availableStatusOptions =
       analyzeResolution(issue._id);
     }
   }}
-  style={{
-    width: "100%",
-    padding: "8px 6px",
-    border: "none",
-    borderRadius: "7px",
-    background: "#702f43",
-    color: "#ffffff",
-    cursor: "pointer",
-    fontWeight: "600",
-  }}
+ style={{
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  padding: "8px 6px",
+  border: "none",
+  borderRadius: "7px",
+  background: "#702f43",
+  color: "#ffffff",
+  cursor: "pointer",
+  fontWeight: "600",
+  overflowWrap: "anywhere",
+}}
 >
    AI Resolution
 </button>
+{/* 🧪 AUTO-REPRODUCE SCRIPT GENERATOR BUTTON (NEW) */}
+  <button
+    type="button"
+    onClick={() => handleOpenReproduce(issue)}
+    disabled={reproduceLoading && selectedIssueTitle === issue.title}
+    style={{
+      ...compactActionButtonStyle,
+      gridColumn: "1 / -1",
+      background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+      color: "#f8fafc",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "6px",
+      padding: "8px",
+      borderRadius: "7px",
+      cursor: "pointer",
+    }}
+  >
+    {reproduceLoading && selectedIssueTitle === issue.title
+      ? "Generating Script..."
+      : " Auto-Reproduce Script"}
+  </button>
 <button
   type="button"
   onClick={() => handleInvestigateIssue(issue)}
@@ -1965,16 +1985,17 @@ const availableStatusOptions =
     investigationLoading &&
     investigationIssue?._id === issue._id
   }
-  style={{
-    ...compactActionButtonStyle,
-    background: "#eee3df",
-    color: "#702f43",
-  }}
+ style={{
+  ...compactActionButtonStyle,
+  gridColumn: "1 / -1",
+  background: "#eee3df",
+  color: "#702f43",
+}}
 >
   {investigationLoading &&
   investigationIssue?._id === issue._id
     ? "Investigating..."
-    : "🔍 AI Investigation"}
+    : " AI Investigation"}
 </button>
  
 
@@ -2495,7 +2516,7 @@ const availableStatusOptions =
           <div
             style={{
               padding: "10px",
-              marginBottom: "12px",
+              marginBottom: "8px",
               borderRadius: "9px",
               background:
                 "rgba(255,255,255,0.65)",
@@ -2659,7 +2680,7 @@ const availableStatusOptions =
             style={{
               background:
                 card.background,
-              padding: "20px",
+              padding: "14px",
               borderRadius: "15px",
               border:
                 "1px solid #eadbd6",
@@ -2870,7 +2891,7 @@ const availableStatusOptions =
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:"repeat(4, minmax(0, 1fr))",
+              gridTemplateColumns:"repeat(5, minmax(0, 1fr))",
               gap: "14px",
               alignItems: "start",
               overflowX: "auto",
@@ -2912,6 +2933,12 @@ const availableStatusOptions =
               accent="#55765d"
               background="#e9f1e9"
             />
+            <KanbanColumn
+  title="Closed"
+  columnIssues={closedIssues}
+  accent="#4f6b5a"
+  background="#e3eee6"
+/>
           </div>
         </DndContext>
       )}
@@ -3137,6 +3164,15 @@ const availableStatusOptions =
   setDeveloperFix={setDeveloperFix}
 />
 
+{/* AUTO-REPRODUCE SCRIPT MODAL (NEW) */}
+      <AutoReproduceModal
+        isOpen={reproduceModalOpen}
+        onClose={() => setReproduceModalOpen(false)}
+        scriptData={scriptData}
+        loading={reproduceLoading}
+        issueTitle={selectedIssueTitle}
+      />
+
     </div>
   );
 }
@@ -3196,11 +3232,14 @@ const secondaryButtonStyle = {
 
 const compactActionButtonStyle = {
   width: "100%",
-  padding: "8px 6px",
+  minWidth: 0,
+  boxSizing: "border-box",
+  padding: "6px 5px",
   border: "none",
-  borderRadius: "7px",
+  borderRadius: "6px",
   fontWeight: "600",
-  fontSize: "13px",
-  cursor: "pointer",
+  fontSize: "12px",
+  lineHeight: "1.2",
+  overflowWrap: "anywhere",
 };
 

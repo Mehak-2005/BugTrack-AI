@@ -1,5 +1,4 @@
 import axios from "axios";
-
 const API = "http://localhost:5000/api/sprints";
 
 // ========================================
@@ -73,5 +72,26 @@ export const deleteSprint = async (id) => {
     getAuthConfig()
   );
 
+
   return res.data;
+};
+// Add this to frontend/src/services/sprintService.js
+
+export const getSprintHealthRadar = async (sprintId) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(`http://localhost:5000/api/sprints/${sprintId}/health-radar`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return res.data.data;
+};
+export const getSprintReleaseNotes = async (sprintId) => {
+  const token = localStorage.getItem("token");
+  const res = await axios.get(`http://localhost:5000/api/sprints/${sprintId}/release-notes`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return res.data.data;
 };

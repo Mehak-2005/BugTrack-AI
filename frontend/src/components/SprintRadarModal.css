@@ -1,0 +1,214 @@
+/* Backdrop Overlay */
+.sprint-radar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Modal Card Window */
+.sprint-radar-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 620px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: radarPop 0.22s ease-out;
+}
+
+@keyframes radarPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.sprint-radar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sprint-radar-header h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: #702f43;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sprint-radar-close {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.sprint-radar-close:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+/* Content Body */
+.sprint-radar-body {
+  padding: 24px;
+  max-height: 75vh;
+  overflow-y: auto;
+}
+
+/* Health Metric Gauge Card */
+.sprint-radar-metric-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #fdfbfb 0%, #f7f1f3 100%);
+  border: 1px solid #ecdfe4;
+  padding: 18px 22px;
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.sprint-radar-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #835263;
+  text-transform: uppercase;
+}
+
+.sprint-radar-risk-text {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: #1e293b;
+}
+
+.sprint-radar-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.sprint-radar-score-wrap {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sprint-radar-score-wrap span {
+  font-size: 16px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+/* Sections */
+.sprint-radar-section {
+  margin-bottom: 18px;
+}
+
+.sprint-radar-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sprint-radar-assessment-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #702f43;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #334155;
+  margin: 0;
+}
+
+/* Lists */
+.sprint-radar-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sprint-radar-list li {
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.sprint-radar-bottleneck-item {
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #991b1b;
+}
+
+.sprint-radar-action-item {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+/* Footer */
+.sprint-radar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  background: #ffffff;
+}
+
+.sprint-radar-btn-close {
+  background: #702f43;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sprint-radar-btn-close:hover {
+  background: #552232;
+}

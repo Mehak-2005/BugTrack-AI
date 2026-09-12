@@ -412,4 +412,10 @@ resolvedAt: {
   }
 );
 
+// Compound indexes for fast query resolution and N+1 prevention
+issueSchema.index({ project: 1, sprint: 1 });
+issueSchema.index({ sprint: 1, status: 1 });
+issueSchema.index({ assignedDeveloper: 1, status: 1 }); // Fixed field name
+issueSchema.index({ severity: 1, priority: 1 });
+
 module.exports = mongoose.model("Issue", issueSchema);

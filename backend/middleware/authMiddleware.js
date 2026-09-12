@@ -30,7 +30,6 @@ const auth = (req, res, next) => {
     req.user = decoded;
 
     next();
-
   } catch (error) {
     return res.status(401).json({
       success: false,
@@ -38,5 +37,12 @@ const auth = (req, res, next) => {
     });
   }
 };
+
+// Allows both:
+// 1. const auth = require('../middleware/authMiddleware')
+// 2. const { protect } = require('../middleware/authMiddleware')
+// 3. const { auth } = require('../middleware/authMiddleware')
+auth.protect = auth;
+auth.auth = auth;
 
 module.exports = auth;

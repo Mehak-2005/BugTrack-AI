@@ -16,6 +16,8 @@ const {
 const {
   generateResolutionRecommendation,
 } = require("../services/resolutionRecommendationService");
+
+const { generateReproductionScript } = require("../services/autoReproduceService");
 // =====================================================
 // ALLOWED VALUES
 // =====================================================
@@ -1788,5 +1790,22 @@ exports.generateResolutionRecommendation = async (
         error.message ||
         "Failed to generate AI resolution recommendation",
     });
+  }
+};
+exports.getIssueReproductionScript = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Issue = require("../models/Issue");
+    const issue = await Issue.findById(id);
+
+    if (!issue) {
+      return res.status(404).json({ success: false, message: "Issue not found" });
+    }
+
+    const scriptData = await generateReproductionScript(issue);
+    res.status(200).json({ success: true, data: scriptData });
+  } catch (error) {
+    console.error("Reproduction script error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

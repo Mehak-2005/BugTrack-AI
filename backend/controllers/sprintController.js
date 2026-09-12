@@ -1,10 +1,10 @@
 const Sprint = require("../models/Sprint");
-
+const { calculateSprintHealth } = require("../services/sprintRadarService");
+const { generateSprintReleaseNotes } = require("../services/releaseNotesService");
 // ========================================
 // GET ALL SPRINTS
 // ========================================
-
-exports.getSprints = async (req, res) => {
+const getSprints = async (req, res) => {
   try {
     const sprints = await Sprint.find({
       createdBy: req.user.id,
@@ -15,7 +15,6 @@ exports.getSprints = async (req, res) => {
     res.status(200).json(sprints);
   } catch (err) {
     console.error("Get sprints error:", err);
-
     res.status(500).json({
       message: "Failed to fetch sprints",
       error: err.message,
@@ -26,8 +25,7 @@ exports.getSprints = async (req, res) => {
 // ========================================
 // CREATE SPRINT
 // ========================================
-
-exports.createSprint = async (req, res) => {
+const createSprint = async (req, res) => {
   try {
     const sprint = await Sprint.create({
       ...req.body,
@@ -41,7 +39,6 @@ exports.createSprint = async (req, res) => {
     res.status(201).json(populatedSprint);
   } catch (err) {
     console.error("Create sprint error:", err);
-
     res.status(500).json({
       message: "Failed to create sprint",
       error: err.message,
@@ -52,16 +49,9 @@ exports.createSprint = async (req, res) => {
 // ========================================
 // UPDATE SPRINT
 // ========================================
-
-exports.updateSprint = async (req, res) => {
+const updateSprint = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      startDate,
-      endDate,
-      project,
-    } = req.body;
+    const { name, description, startDate, endDate, project } = req.body;
 
     const sprint = await Sprint.findOneAndUpdate(
       {
@@ -92,7 +82,6 @@ exports.updateSprint = async (req, res) => {
     res.status(200).json(sprint);
   } catch (err) {
     console.error("Update sprint error:", err);
-
     res.status(500).json({
       message: "Failed to update sprint",
       error: err.message,
@@ -103,8 +92,7 @@ exports.updateSprint = async (req, res) => {
 // ========================================
 // DELETE SPRINT
 // ========================================
-
-exports.deleteSprint = async (req, res) => {
+const deleteSprint = async (req, res) => {
   try {
     const sprint = await Sprint.findOneAndDelete({
       _id: req.params.id,
@@ -122,10 +110,42 @@ exports.deleteSprint = async (req, res) => {
     });
   } catch (err) {
     console.error("Delete sprint error:", err);
-
     res.status(500).json({
       message: "Failed to delete sprint",
       error: err.message,
     });
   }
+};
+
+// ========================================
+// SPRINT HEALTH RADAR
+// ========================================
+const getSprintHealthRadar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const healthData = await calculateSprintHealth(id);
+    res.status(200).json({ success: true, data: healthData });
+  } catch (error) {
+    console.error("Sprint health radar error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+const getSprintReleaseNotes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notes = await generateSprintReleaseNotes(id);
+    res.status(200).json({ success: true, data: notes });
+  } catch (error) {
+    console.error("Sprint release notes error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  getSprints,
+  createSprint,
+  updateSprint,
+  deleteSprint,
+  getSprintHealthRadar,
+  getSprintReleaseNotes,
 };
