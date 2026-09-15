@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import LoginPage from "./pages/LoginPage";
+import JoinProjectPage from "./pages/JoinProjectPage";
 import RegisterPage from "./pages/RegisterPage";
 
 import Dashboard from "./pages/Dashboard";
@@ -15,8 +16,8 @@ import TeamPage from "./pages/TeamPage";
 import CreateIssueForm from "./pages/CreateIssueForm";
 import ActivityPage from "./pages/ActivityPage";
 import SprintPage from "./pages/SprintPage";
-import JoinProjectPage from "./pages/JoinProjectPage";
 import Layout from "./components/Layout";
+
 
 function App() {
   return (
@@ -46,15 +47,13 @@ function App() {
           path="/login"
           element={<LoginPage />}
         />
+        <Route path="/join" element={<JoinProjectPage />} />
 
         <Route
           path="/register"
           element={<RegisterPage />}
         />
-        <Route
-  path="/join-project"
-  element={<JoinProjectPage />}
-/>
+        
         {/* ==========================
             MAIN APPLICATION
 

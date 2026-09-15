@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import ResolutionAssistantModal from "../components/ResolutionAssistantModal";
 import axios from "axios";
@@ -30,10 +29,14 @@ export default function IssuesPage() {
   const navigate = useNavigate();
 
   const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("All");
+// Tracks which specific issue ID is currently loading/running an action
+const [activeLoadingId, setActiveLoadingId] = useState(null);
 
-  const [loading, setLoading] = useState(true);
+// Tracks which specific issue ID's modal is open (or null if none are open)
+const [activeModalIssueId, setActiveModalIssueId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [commentModalIssue, setCommentModalIssue] = useState(null);
 
@@ -161,6 +164,7 @@ const token = localStorage.getItem("token");
 
 const generateTestCases = async (issueId) => {
   try {
+    setActiveLoadingId(issueId);
     setGeneratingTestCases(true);
 
     const token = localStorage.getItem("token");
@@ -191,6 +195,7 @@ const generateTestCases = async (issueId) => {
     console.error("Test case generation error:", error);
     alert(error.message || "Failed to generate test cases");
   } finally {
+    setActiveLoadingId(null);
     setGeneratingTestCases(false);
   }
 };
@@ -201,6 +206,7 @@ const generateTestCases = async (issueId) => {
 
 const handleRecommendDeveloper = async (issue) => {
   try {
+    setActiveLoadingId(issue._id);
     setLoadingRecommendation(true);
 
     const token = localStorage.getItem("token");
@@ -237,6 +243,7 @@ const handleRecommendDeveloper = async (issue) => {
     alert(error.message);
 
   } finally {
+    setActiveLoadingId(null);
     setLoadingRecommendation(false);
   }
 };
@@ -274,7 +281,7 @@ const handleAssignDeveloper = async (
       await axios.get(
         "http://localhost:5000/api/team",
         getAuthConfig()
-      );
+    );
 
     const teamMembers =
       Array.isArray(teamResponse.data)
@@ -388,6 +395,7 @@ const handleVerifyResolution = async (issue) => {
   }
 
   try {
+    setActiveLoadingId(issue._id);
     setVerificationLoading(true);
 
     const token = localStorage.getItem("token");
@@ -431,6 +439,7 @@ const handleVerifyResolution = async (issue) => {
     );
 
   } finally {
+    setActiveLoadingId(null);
     setVerificationLoading(false);
   }
 };
@@ -760,6 +769,7 @@ const analyzeResolution = async (issueId) => {
   }
 
   try {
+    setActiveLoadingId(issueId);
     setResolutionLoadingId(issueId);
 
     const res = await axios.post(
@@ -823,11 +833,13 @@ const analyzeResolution = async (issueId) => {
     );
 
   } finally {
+    setActiveLoadingId(null);
     setResolutionLoadingId(null);
   }
 };
 const handleInvestigateIssue = async (issue) => {
   try {
+    setActiveLoadingId(issue._id);
     setInvestigationIssue(issue);
     setInvestigationResult(null);
     setInvestigationLoading(true);
@@ -870,6 +882,7 @@ const handleInvestigateIssue = async (issue) => {
 
     setShowInvestigationModal(false);
   } finally {
+    setActiveLoadingId(null);
     setInvestigationLoading(false);
   }
 };
@@ -1108,6 +1121,7 @@ const deleteAttachment = async (issueId, attachmentId) => {
         return matchesSearch && matchesPriority;
   });
   const handleOpenReproduce = async (issue) => {
+  setActiveLoadingId(issue._id);
   setSelectedIssueTitle(issue.title);
   setScriptData(null);
   setReproduceModalOpen(true);
@@ -1119,6 +1133,7 @@ const deleteAttachment = async (issueId, attachmentId) => {
   } catch (err) {
     alert(err.message || "Failed to generate script");
   } finally {
+    setActiveLoadingId(null);
     setReproduceLoading(false);
   }
 };
@@ -1611,7 +1626,7 @@ const availableStatusOptions =
           {issue.createdAt
             ? new Date(
                 issue.createdAt
-              ).toLocaleDateString()
+            ).toLocaleDateString()
             : ""}
         </div>
 
@@ -1902,7 +1917,7 @@ const availableStatusOptions =
 
 <button
   onClick={() => generateTestCases(issue._id)}
-  disabled={generatingTestCases}
+  disabled={activeLoadingId === issue._id && generatingTestCases}
   style={{
   width: "100%",
   minWidth: 0,
@@ -1914,13 +1929,13 @@ const availableStatusOptions =
   background: "#7a2948",
   color: "white",
   fontWeight: "600",
-  cursor: generatingTestCases
+  cursor: activeLoadingId === issue._id && generatingTestCases
     ? "not-allowed"
     : "pointer",
   overflowWrap: "anywhere",
 }}
 >
-   {generatingTestCases
+   {activeLoadingId === issue._id && generatingTestCases
     ? "Generating Test Cases..."
     : "Generate Test Cases"}
 </button>
@@ -1959,7 +1974,7 @@ const availableStatusOptions =
   <button
     type="button"
     onClick={() => handleOpenReproduce(issue)}
-    disabled={reproduceLoading && selectedIssueTitle === issue.title}
+    disabled={activeLoadingId === issue._id && reproduceLoading}
     style={{
       ...compactActionButtonStyle,
       gridColumn: "1 / -1",
@@ -1974,7 +1989,7 @@ const availableStatusOptions =
       cursor: "pointer",
     }}
   >
-    {reproduceLoading && selectedIssueTitle === issue.title
+    {activeLoadingId === issue._id && reproduceLoading
       ? "Generating Script..."
       : " Auto-Reproduce Script"}
   </button>
@@ -1982,8 +1997,8 @@ const availableStatusOptions =
   type="button"
   onClick={() => handleInvestigateIssue(issue)}
   disabled={
-    investigationLoading &&
-    investigationIssue?._id === issue._id
+    activeLoadingId === issue._id &&
+    investigationLoading
   }
  style={{
   ...compactActionButtonStyle,
@@ -1992,8 +2007,8 @@ const availableStatusOptions =
   color: "#702f43",
 }}
 >
-  {investigationLoading &&
-  investigationIssue?._id === issue._id
+  {activeLoadingId === issue._id &&
+  investigationLoading
     ? "Investigating..."
     : " AI Investigation"}
 </button>
@@ -2258,7 +2273,7 @@ const availableStatusOptions =
                     {comment.createdAt
                       ? new Date(
                           comment.createdAt
-                        ).toLocaleString()
+                      ).toLocaleString()
                       : ""}
                   </span>
                 </div>
@@ -2295,8 +2310,8 @@ const availableStatusOptions =
                 >
                   Delete
                 </button>
-              </div>
-            )
+            </div>
+          )
           )
         )}
 
@@ -2372,17 +2387,17 @@ const availableStatusOptions =
   type="button"
   className="recommend-developer-btn"
   onClick={() => handleRecommendDeveloper(issue)}
-  disabled={loadingRecommendation}
+  disabled={activeLoadingId === issue._id && loadingRecommendation}
   style={{
     ...compactActionButtonStyle,
     background: "#f4e2e5",
     color: "#702f43",
-    cursor: loadingRecommendation
+    cursor: activeLoadingId === issue._id && loadingRecommendation
       ? "wait"
       : "pointer",
   }}
 >
-  {loadingRecommendation
+  {activeLoadingId === issue._id && loadingRecommendation
   ? "Finding Best Developer..."
   : issue.assignedDeveloper
     ? "Reassign Developer"
@@ -2508,11 +2523,11 @@ const availableStatusOptions =
           >
             {columnIssues.length}
           </span>
-        </div>
+      </div>
 
-        {/* DROP MESSAGE */}
+      {/* DROP MESSAGE */}
 
-        {isOver && (
+      {isOver && (
           <div
             style={{
               padding: "10px",
@@ -3173,7 +3188,7 @@ const availableStatusOptions =
         issueTitle={selectedIssueTitle}
       />
 
-    </div>
+  </div>
   );
 }
 
@@ -3242,4 +3257,3 @@ const compactActionButtonStyle = {
   lineHeight: "1.2",
   overflowWrap: "anywhere",
 };
-

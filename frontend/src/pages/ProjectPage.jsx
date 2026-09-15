@@ -7,6 +7,7 @@ export default function ProjectPage() {
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [generatedPasskey, setGeneratedPasskey] = useState("");
 
   const navigate = useNavigate();
 
@@ -77,8 +78,9 @@ export default function ProjectPage() {
 
     try {
       setLoading(true);
+      setGeneratedPasskey("");
 
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:5000/api/projects",
         {
           projectName,
@@ -91,14 +93,17 @@ export default function ProjectPage() {
         }
       );
 
-      alert("Project Created Successfully!");
+      if (res.data.success) {
+        setGeneratedPasskey(res.data.passkey);
+        alert("Project Created Successfully!");
 
-      // Clear form
-      setProjectName("");
-      setDescription("");
+        // Clear form
+        setProjectName("");
+        setDescription("");
 
-      // Reload projects
-      await fetchProjects();
+        // Reload projects
+        await fetchProjects();
+      }
 
     } catch (err) {
       console.error("Error creating project:", err);
@@ -174,14 +179,25 @@ export default function ProjectPage() {
             type="submit"
             disabled={loading}
             className="primary-btn"
+            style={{ width: "100%", padding: "12px", cursor: "pointer" }}
           >
-
-            {loading
-              ? "Creating..."
-              : "Create Project"}
+            {loading ? "Creating..." : "Create Project"}
           </button>
 
         </form>
+
+        {/* ==========================
+            DISPLAY GENERATED PASSKEY
+        ========================== */}
+        {generatedPasskey && (
+          <div style={{ background: "#eefbf3", border: "1px solid #16794c", padding: "16px", borderRadius: "10px", marginTop: "20px" }}>
+            <h4 style={{ color: "#16794c", margin: "0 0 8px 0" }}>✓ Project Created Successfully!</h4>
+            <p style={{ fontSize: "14px", margin: "0 0 8px 0", color: "#333" }}>Share this single shared passkey with all your team members:</p>
+            <div style={{ background: "#fff", padding: "10px", fontWeight: "bold", fontSize: "18px", letterSpacing: "1px", color: "#6b2945", textAlign: "center", borderRadius: "6px", border: "1px dashed #16794c" }}>
+              {generatedPasskey}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ==========================
@@ -217,22 +233,30 @@ export default function ProjectPage() {
             <div
               key={project._id}
               className="project-card"
+              style={{ background: "#fff", padding: "20px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
             >
 
               <h2>{project.projectName}</h2>
 
-              <p>
+              <p style={{ color: "#666", fontSize: "14px", marginBottom: "12px" }}>
                 {project.description ||
                   "No description provided"}
               </p>
 
-              <p>
+              {project.passkey && (
+                <div style={{ background: "#fdf4f6", padding: "8px 12px", borderRadius: "8px", marginBottom: "12px", border: "1px solid #f3d6df" }}>
+                  <span style={{ fontSize: "12px", color: "#777", display: "block" }}>Shared Passkey:</span>
+                  <strong style={{ color: "#6b2945", letterSpacing: "1px" }}>{project.passkey}</strong>
+                </div>
+              )}
+
+              <p style={{ fontSize: "13px", color: "#555" }}>
                 <strong>Created By:</strong>{" "}
                 {project.createdBy?.name ||
                   "Unknown"}
               </p>
 
-              <p>
+              <p style={{ fontSize: "13px", color: "#555" }}>
                 <strong>Created:</strong>{" "}
                 {project.createdAt
                   ? new Date(

@@ -317,6 +317,42 @@ export default function LoginPage() {
 
             </div>
 
+            {/* =====================================
+                JOIN PROJECT WITH CODE OPTION
+            ====================================== */}
+
+            <div style={{ marginTop: "24px", textAlign: "center", borderTop: "1px solid #eee", paddingTop: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#666", marginBottom: "12px" }}>
+                Have a team invitation code?
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/join")}
+                style={{
+                  width: "100%",
+                  border: "2px solid #6b2945",
+                  borderRadius: "10px",
+                  padding: "12px",
+                  background: "#ffffff",
+                  color: "#6b2945",
+                  fontSize: "15px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = "#6b2945";
+                  e.target.style.color = "#ffffff";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = "#ffffff";
+                  e.target.style.color = "#6b2945";
+                }}
+              >
+                Join Project with Code
+              </button>
+            </div>
+
           </div>
 
         </section>

@@ -41,7 +41,7 @@ const generateBugReport = async ({
 
     // Gemini model
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ==========================================
@@ -201,7 +201,7 @@ const analyzeBug = async ({ description }) => {
     // ==========================================
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ==========================================
@@ -632,7 +632,7 @@ const generateResolutionAssistance = async ({
     // ========================================
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ========================================
@@ -934,7 +934,7 @@ const generateTestCases = async ({
     // ==========================================
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ==========================================
@@ -1317,7 +1317,7 @@ const recommendDeveloper = async ({
     // ==========================================
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ==========================================
@@ -1640,7 +1640,7 @@ const generateResolutionVerification = async ({
     // ==========================================
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     // ==========================================
@@ -1962,7 +1962,7 @@ const generateAnalyticsInsights = async ({
 }) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
     });
 
     const prompt = `

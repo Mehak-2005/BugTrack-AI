@@ -26,7 +26,7 @@ Rules for the script:
   try {
     // Force Gemini to respond strictly in structured JSON schema
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.8-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {

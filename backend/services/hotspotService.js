@@ -4,9 +4,9 @@ const Issue = require("../models/Issue");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const calculateDefectHotspots = async (userId) => {
-  // Query all issues or match user/project context safely
+  // Query only issues belonging to this specific user
   const issues = await Issue.find({
-    $or: [{ createdBy: userId }, { user: userId }, {}] // Graceful fallback to all workspace defects
+    $or: [{ createdBy: userId }, { user: userId }]
   }).select("category severity priority status affectedModule defectType");
 
   if (!issues || issues.length === 0) {
@@ -19,7 +19,7 @@ const calculateDefectHotspots = async (userId) => {
       },
     };
   }
-
+  // ... rest of your calculation logic ...
   // Calculate severity-weighted fragility score per module/category
   const severityWeight = { Critical: 4, High: 3, Medium: 2, Low: 1 };
   const moduleStats = {};
@@ -63,7 +63,7 @@ ${JSON.stringify(fragileModules, null, 2)}
 
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.8-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {

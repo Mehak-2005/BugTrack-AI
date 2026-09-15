@@ -7,7 +7,7 @@ const crypto = require("crypto");
 // CALCULATE WORKLOAD
 // ========================================
 //
-// 1 active task  = 20%
+// 1 active task   = 20%
 // 2 active tasks = 40%
 // 3 active tasks = 60%
 // 4 active tasks = 80%
@@ -93,30 +93,27 @@ const addTeamMember = async (req, res) => {
         message: "Project ID is required",
       });
     }
-   const project = await Project.findOne({
-  _id: projectId,
-  createdBy: req.user.id,
-});
 
-if (!project) {
-  return res.status(404).json({
-    message:
-      "Project not found or you do not have permission to use it",
-  });
-}
-    
+    const project = await Project.findOne({
+      _id: projectId,
+      createdBy: req.user.id,
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        message:
+          "Project not found or you do not have permission to use it",
+      });
+    }
+
     // ========================================
-    // GENERATE UNIQUE PASSCODE
+    // ENSURE SHARED PROJECT PASSKEY EXISTS
     // ========================================
 
-    const passcode = crypto
-      .randomBytes(4)
-      .toString("hex")
-      .toUpperCase();
-      // ========================================
-    // PASSCODE EXPIRY
-    // 24 HOURS
-    // ========================================
+    if (!project.passkey) {
+      project.passkey = "PROJ-" + crypto.randomBytes(3).toString("hex").toUpperCase();
+      await project.save();
+    }
 
     const passcodeExpiresAt = new Date(
       Date.now() + 24 * 60 * 60 * 1000
@@ -148,11 +145,12 @@ if (!project) {
       email: email?.trim() || "",
 
       assignedTasks: [],
-    // ========================================
-      // INVITATION DETAILS
+
+      // ========================================
+      // INVITATION DETAILS (Using Shared Passkey)
       // ========================================
 
-      passcode,
+      passcode: project.passkey,
 
       passcodeExpiresAt,
 
@@ -166,12 +164,12 @@ if (!project) {
     res.status(201).json({
       message: "Team member added successfully",
       member,
-       invitation: {
-        passcode,
+      invitation: {
+        passcode: project.passkey,
         expiresAt: passcodeExpiresAt,
       },
     });
-    
+
   } catch (error) {
     console.error(
       "Error adding team member:",
@@ -334,33 +332,6 @@ const updateAssignedTaskStatus = async (
 
     const memberId = req.params.id;
 
-    console.log(
-      "========================================"
-    );
-
-    console.log(
-      "UPDATING ASSIGNED TASK STATUS"
-    );
-
-    console.log(
-      "Member ID:",
-      memberId
-    );
-
-    console.log(
-      "Task ID:",
-      taskId
-    );
-
-    console.log(
-      "New Status:",
-      status
-    );
-
-    console.log(
-      "========================================"
-    );
-
     // ========================================
     // ALLOWED STATUSES
     // ========================================
@@ -418,16 +389,6 @@ const updateAssignedTaskStatus = async (
       });
     }
 
-    console.log(
-      "Issue ID:",
-      task.issueId
-    );
-
-    console.log(
-      "Old Task Status:",
-      task.status
-    );
-
     // ========================================
     // UPDATE TEAM MEMBER TASK STATUS
     // ========================================
@@ -453,21 +414,12 @@ const updateAssignedTaskStatus = async (
           }
         );
 
-      // ========================================
-      // ISSUE NOT FOUND
-      // ========================================
-
       if (!updatedIssue) {
         return res.status(404).json({
           message:
             "The assigned issue could not be found",
         });
       }
-
-      console.log(
-        "Issue status successfully updated to:",
-        updatedIssue.status
-      );
     }
 
     // ========================================
@@ -483,16 +435,6 @@ const updateAssignedTaskStatus = async (
     // ========================================
 
     await member.save();
-
-    console.log(
-      "Team member task status updated to:",
-      task.status
-    );
-
-    console.log(
-      "New workload:",
-      member.workload
-    );
 
     // ========================================
     // RESPONSE
@@ -538,20 +480,12 @@ const deleteTeamMember = async (
         owner: req.user.id,
       });
 
-    // ========================================
-    // MEMBER NOT FOUND
-    // ========================================
-
     if (!member) {
       return res.status(404).json({
         message:
           "Team member not found",
       });
     }
-
-    // ========================================
-    // RESPONSE
-    // ========================================
 
     res.status(200).json({
       message:
@@ -569,17 +503,14 @@ const deleteTeamMember = async (
     });
   }
 };
+
 // ========================================
 // GET MY PROJECT
 // TEAM MEMBER DASHBOARD
 // ========================================
 
-exports.getMyProject = async (req, res) => {
+const getMyProject = async (req, res) => {
   try {
-    // --------------------------------------
-    // CHECK TEAM MEMBER ID FROM JWT
-    // --------------------------------------
-
     const teamMemberId = req.user.teamMemberId;
 
     if (!teamMemberId) {
@@ -589,19 +520,11 @@ exports.getMyProject = async (req, res) => {
       });
     }
 
-    // --------------------------------------
-    // FIND TEAM MEMBER
-    // --------------------------------------
-
     const teamMember = await TeamMember.findById(
       teamMemberId
     )
       .populate("project")
       .populate("owner", "name email");
-
-    // --------------------------------------
-    // TEAM MEMBER NOT FOUND
-    // --------------------------------------
 
     if (!teamMember) {
       return res.status(404).json({
@@ -610,10 +533,6 @@ exports.getMyProject = async (req, res) => {
       });
     }
 
-    // --------------------------------------
-    // CHECK PROJECT
-    // --------------------------------------
-
     if (!teamMember.project) {
       return res.status(404).json({
         success: false,
@@ -621,21 +540,11 @@ exports.getMyProject = async (req, res) => {
       });
     }
 
-    // --------------------------------------
-    // FIND PROJECT ISSUES
-    // --------------------------------------
-
-    const Issue = require("../models/Issue");
-
     const issues = await Issue.find({
       project: teamMember.project._id,
     }).sort({
       createdAt: -1,
     });
-
-    // --------------------------------------
-    // RESPONSE
-    // --------------------------------------
 
     return res.status(200).json({
       success: true,
@@ -656,6 +565,7 @@ exports.getMyProject = async (req, res) => {
           teamMember.project.projectName,
         description:
           teamMember.project.description,
+        passkey: teamMember.project.passkey,
       },
 
       issues: issues,
@@ -675,6 +585,7 @@ exports.getMyProject = async (req, res) => {
     });
   }
 };
+
 // ========================================
 // EXPORT
 // ========================================
@@ -685,5 +596,5 @@ module.exports = {
   assignIssueToTeamMember,
   updateAssignedTaskStatus,
   deleteTeamMember,
-  getMyProject: exports.getMyProject,
+  getMyProject,
 };

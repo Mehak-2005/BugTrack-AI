@@ -8,6 +8,7 @@ const {
   createProject,
   getProjects,
   getProjectById,
+  joinProject,
 } = require("../controllers/projectController");
 
 /**
@@ -26,9 +27,9 @@ const {
  *           schema:
  *             type: object
  *             required:
- *               - name
+ *               - projectName
  *             properties:
- *               name:
+ *               projectName:
  *                 type: string
  *                 example: BugTrack AI
  *               description:
@@ -45,7 +46,44 @@ const {
  *         description: Server error
  */
 router.post("/", auth, createProject);
- 
+
+/**
+ * @swagger
+ * /api/projects/join:
+ *   post:
+ *     summary: Join an existing project using a passkey and member name verification
+ *     tags:
+ *       - Projects
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - passkey
+ *               - memberName
+ *             properties:
+ *               passkey:
+ *                 type: string
+ *                 example: PROJ-A9F2
+ *               memberName:
+ *                 type: string
+ *                 example: Rahul
+ *     responses:
+ *       200:
+ *         description: Joined project successfully
+ *       400:
+ *         description: Passkey and member name are required
+ *       403:
+ *         description: Access denied - Member not authorized by team lead
+ *       404:
+ *         description: Invalid passkey. Project not found
+ *       500:
+ *         description: Server error
+ */
+// Public route: auth middleware removed so new joining members can access it
+router.post("/join", joinProject);
 
 /**
  * @swagger

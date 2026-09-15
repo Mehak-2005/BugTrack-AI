@@ -140,7 +140,7 @@ ${priority || "Not available"}
 
     const model =
       genAI.getGenerativeModel({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.8-flash",
       });
 
     // ========================================

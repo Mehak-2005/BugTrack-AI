@@ -66,7 +66,7 @@ Respond ONLY with valid JSON in this exact structure:
 `;
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json|```/g, '').trim();
     const aiAssessment = JSON.parse(text);
